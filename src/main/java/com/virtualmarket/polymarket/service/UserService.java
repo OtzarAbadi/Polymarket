@@ -7,7 +7,7 @@ import com.virtualmarket.polymarket.entity.User;
 import com.virtualmarket.polymarket.entity.Wallet;
 import com.virtualmarket.polymarket.enums.UserRole;
 import com.virtualmarket.polymarket.repository.UserRepository;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
@@ -20,12 +20,12 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final WalletService walletService;
-    private final BCryptPasswordEncoder passwordEncoder;
+    private final PasswordEncoder passwordEncoder;
 
-    public UserService(UserRepository userRepository, WalletService walletService) {
+    public UserService(UserRepository userRepository, WalletService walletService, PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
         this.walletService = walletService;
-        this.passwordEncoder = new BCryptPasswordEncoder();
+        this.passwordEncoder = passwordEncoder;
     }
 
     @Transactional
