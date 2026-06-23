@@ -13,6 +13,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 
 import static org.springframework.http.HttpStatus.NOT_FOUND;
+import java.util.List;
 
 @Service
 public class PricingService {
@@ -44,7 +45,7 @@ public class PricingService {
         BigDecimal noPrice = calculateNoPrice(yesPrice);
 
         yesOutcome.setCurrentPrice(yesPrice);
-        noOutcome.setCurrentPrice(noPrice);Stage only PricingService.java.
+        noOutcome.setCurrentPrice(noPrice);
 
 
         marketOutcomeRepository.saveAll(List.of(yesOutcome, noOutcome));
