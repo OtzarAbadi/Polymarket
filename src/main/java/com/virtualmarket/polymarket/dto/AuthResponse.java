@@ -11,16 +11,18 @@ public class AuthResponse {
     private String email;
     private UserRole role;
     private BigDecimal walletBalance;
+    private String token;
 
     public AuthResponse() {
     }
 
-    public AuthResponse(Long userId, String username, String email, UserRole role, BigDecimal walletBalance) {
+    public AuthResponse(Long userId, String username, String email, UserRole role, BigDecimal walletBalance, String token) {
         this.userId = userId;
         this.username = username;
         this.email = email;
         this.role = role;
         this.walletBalance = walletBalance;
+        this.token = token;
     }
 
     public Long getUserId() {
@@ -61,5 +63,13 @@ public class AuthResponse {
 
     public void setWalletBalance(BigDecimal walletBalance) {
         this.walletBalance = walletBalance;
+    }
+
+    public String getToken() {
+        return token;
+    }
+
+    public void setToken(String token) {
+        this.token = token;
     }
 }

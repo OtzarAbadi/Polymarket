@@ -1,14 +1,11 @@
 package com.virtualmarket.polymarket.repository;
 
 import com.virtualmarket.polymarket.entity.User;
-import com.virtualmarket.polymarket.enums.UserRole;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.Optional;
 
 public interface UserRepository extends JpaRepository<User, Long> {
-    boolean existsByRole(UserRole role);
-
     boolean existsByUsername(String username);
 
     boolean existsByEmail(String email);
@@ -16,6 +13,4 @@ public interface UserRepository extends JpaRepository<User, Long> {
     Optional<User> findByUsername(String username);
 
     Optional<User> findByEmail(String email);
-
-    Optional<User> findFirstByRole(UserRole role);
 }

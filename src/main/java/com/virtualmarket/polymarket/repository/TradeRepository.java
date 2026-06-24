@@ -11,4 +11,7 @@ public interface TradeRepository extends JpaRepository<Trade, Long> {
     List<Trade> findByUser(User user);
 
     List<Trade> findByMarket(Market market);
+    List<Trade> findByUserId(Long userId);
+
+    List<Trade> findByMarketId(Long marketId);
 }
