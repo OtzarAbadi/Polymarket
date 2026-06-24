@@ -20,11 +20,13 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final WalletService walletService;
+    private final JwtService jwtService;
     private final PasswordEncoder passwordEncoder;
 
-    public UserService(UserRepository userRepository, WalletService walletService, PasswordEncoder passwordEncoder) {
+    public UserService(UserRepository userRepository, WalletService walletService, JwtService jwtService, PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
         this.walletService = walletService;
+        this.jwtService = jwtService;
         this.passwordEncoder = passwordEncoder;
     }
 
@@ -73,7 +75,8 @@ public class UserService {
                 user.getUsername(),
                 user.getEmail(),
                 user.getRole(),
-                wallet.getBalance()
+                wallet.getBalance(),
+                jwtService.generateToken(user)
         );
     }
 }
