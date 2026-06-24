@@ -1,0 +1,43 @@
+/* Global Styles */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* {
+  @apply transition-colors duration-200;
+}
+
+body {
+  @apply bg-white dark:bg-slate-950 text-slate-950 dark:text-white;
+}
+
+/* Skeleton loading animation */
+@keyframes shimmer {
+  0% {
+    background-position: -1000px 0;
+  }
+  100% {
+    background-position: 1000px 0;
+  }
+}
+
+.skeleton {
+  animation: shimmer 2s infinite;
+  background: linear-gradient(
+    to right,
+    #f0f0f0 8%,
+    #f8f8f8 18%,
+    #f0f0f0 33%
+  );
+  background-size: 800px 104px;
+}
+
+.dark .skeleton {
+  background: linear-gradient(
+    to right,
+    #1e293b 8%,
+    #334155 18%,
+    #1e293b 33%
+  );
+  background-size: 800px 104px;
+}
