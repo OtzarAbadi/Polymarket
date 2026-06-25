@@ -156,6 +156,17 @@ export interface PriceHistoryDto {
   noPrice: number;
 }
 
+export interface LeaderboardResponseDto {
+  rank: number;
+  userId: number;
+  username: string;
+  email: string;
+  walletBalance: number | string;
+  openPositions: number;
+  totalTrades: number;
+  portfolioValue: number | string;
+}
+
 export interface MarketsResult {
   markets: Market[];
   total: number;

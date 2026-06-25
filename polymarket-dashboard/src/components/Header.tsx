@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
-import { Briefcase, LogOut, Shield, TrendingUp, User, Wallet } from 'lucide-react';
+import { Briefcase, LogOut, Medal, Shield, TrendingUp, User, Wallet } from 'lucide-react';
 import { ThemeToggle } from './ThemeToggle';
 import { AuthResponseDto } from '@/types/api';
 import { getCurrentUser, logout } from '@/services/authService';
@@ -57,6 +57,10 @@ export function Header() {
                 <Link href="/profile" className="flex items-center gap-1 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors">
                   <User className="w-4 h-4" />
                   Profile
+                </Link>
+                <Link href="/leaderboard" className="flex items-center gap-1 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors">
+                  <Medal className="w-4 h-4" />
+                  Leaderboard
                 </Link>
                 <Link
                   href="/trade-history"
