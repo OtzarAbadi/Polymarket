@@ -1,10 +1,17 @@
 'use client';
 
 import Link from 'next/link';
-import { ArrowLeft, TrendingUp, BarChart3 } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { AxiosError } from 'axios';
+import { ArrowLeft, BarChart3 } from 'lucide-react';
 import { formatPrice, formatVolume, getStateColor, getStateLabel } from '@/lib/utils';
 import { MarketDetail } from '@/lib/api';
 import { PriceChart } from './PriceChart';
+import { getCurrentUser } from '@/services/authService';
+import { updateCurrentUser } from '@/services/authStorage';
+import { executeTrade } from '@/services/tradeService';
+import { AuthResponseDto, TradeOutcomeName, TradeType } from '@/types/api';
 
 interface MarketDetailProps {
   market: MarketDetail;
@@ -12,12 +19,78 @@ interface MarketDetailProps {
 }
 
 export function MarketDetailComponent({ market, isLoading }: MarketDetailProps) {
-  if (isLoading) {
-    return <div className="text-center py-12">Loading market details...</div>;
-  }
+  const queryClient = useQueryClient();
+  const [currentUser, setCurrentUser] = useState<AuthResponseDto | null>(null);
+  const [tradeType, setTradeType] = useState<TradeType>('BUY');
+  const [outcomeName, setOutcomeName] = useState<TradeOutcomeName>('YES');
+  const [quantity, setQuantity] = useState('1');
+  const [tradeError, setTradeError] = useState<string | null>(null);
+  const [tradeSuccess, setTradeSuccess] = useState<string | null>(null);
+
+  useEffect(() => {
+    setCurrentUser(getCurrentUser());
+  }, []);
 
   const yesPercentage = (market.yesPrice * 100).toFixed(1);
   const noPercentage = ((1 - market.yesPrice) * 100).toFixed(1);
+  const selectedOutcomeId = outcomeName === 'YES' ? market.yesOutcomeId : market.noOutcomeId;
+  const selectedPrice = outcomeName === 'YES' ? market.yesPrice : market.noPrice;
+  const parsedQuantity = Number(quantity);
+  const estimatedCost = useMemo(() => {
+    if (!Number.isFinite(parsedQuantity) || parsedQuantity <= 0) return 0;
+    return parsedQuantity * selectedPrice;
+  }, [parsedQuantity, selectedPrice]);
+
+  const tradeMutation = useMutation({
+    mutationFn: () => {
+      if (!currentUser) {
+        throw new Error('Login is required before trading.');
+      }
+      if (!selectedOutcomeId) {
+        throw new Error('Selected outcome is unavailable.');
+      }
+      if (!Number.isFinite(parsedQuantity) || parsedQuantity <= 0) {
+        throw new Error('Enter a quantity greater than zero.');
+      }
+
+      return executeTrade({
+        userId: currentUser.userId,
+        marketId: market.marketId,
+        outcomeId: selectedOutcomeId,
+        quantity: parsedQuantity,
+        type: tradeType,
+      });
+    },
+    onSuccess: (response) => {
+      updateCurrentUser({ walletBalance: response.walletBalanceAfterTrade });
+      setCurrentUser(getCurrentUser());
+      setTradeError(null);
+      setTradeSuccess(`${tradeType} ${outcomeName} trade completed.`);
+      queryClient.invalidateQueries({ queryKey: ['market', market.id] });
+      queryClient.invalidateQueries({ queryKey: ['wallet', currentUser?.userId] });
+      queryClient.invalidateQueries({ queryKey: ['wallet-transactions', currentUser?.userId] });
+      queryClient.invalidateQueries({ queryKey: ['positions', currentUser?.userId] });
+    },
+    onError: (err) => {
+      const axiosError = err as AxiosError<{ message?: string }>;
+      setTradeSuccess(null);
+      setTradeError(
+        axiosError.response?.data?.message ||
+          (err instanceof Error ? err.message : 'Trade failed. Check your balance and position.')
+      );
+    },
+  });
+
+  const handleTradeSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setTradeError(null);
+    setTradeSuccess(null);
+    tradeMutation.mutate();
+  };
+
+  if (isLoading) {
+    return <div className="text-center py-12">Loading market details...</div>;
+  }
 
   return (
     <div className="space-y-6">
@@ -135,10 +208,100 @@ export function MarketDetailComponent({ market, isLoading }: MarketDetailProps) 
             </div>
           </div>
 
-          {/* CTA */}
-          <button className="w-full px-6 py-3 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium transition-colors">
-            Trade Now
-          </button>
+          <div className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-6">
+            <h3 className="text-sm font-semibold text-slate-600 dark:text-slate-400 mb-4">
+              Trade Ticket
+            </h3>
+
+            {!currentUser ? (
+              <div className="space-y-3">
+                <p className="text-sm text-slate-600 dark:text-slate-400">
+                  Login to buy or sell shares in this market.
+                </p>
+                <Link
+                  href="/login"
+                  className="block w-full px-6 py-3 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-center font-medium transition-colors"
+                >
+                  Login to trade
+                </Link>
+              </div>
+            ) : (
+              <form onSubmit={handleTradeSubmit} className="space-y-4">
+                <div className="grid grid-cols-2 gap-2">
+                  {(['BUY', 'SELL'] as TradeType[]).map((type) => (
+                    <button
+                      key={type}
+                      type="button"
+                      onClick={() => setTradeType(type)}
+                      className={`px-4 py-2 rounded-lg border font-medium transition-colors ${
+                        tradeType === type
+                          ? 'border-blue-600 bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-200'
+                          : 'border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300'
+                      }`}
+                    >
+                      {type}
+                    </button>
+                  ))}
+                </div>
+
+                <div className="grid grid-cols-2 gap-2">
+                  {(['YES', 'NO'] as TradeOutcomeName[]).map((outcome) => (
+                    <button
+                      key={outcome}
+                      type="button"
+                      onClick={() => setOutcomeName(outcome)}
+                      className={`px-4 py-2 rounded-lg border font-medium transition-colors ${
+                        outcomeName === outcome
+                          ? outcome === 'YES'
+                            ? 'border-green-600 bg-green-50 text-green-700 dark:bg-green-950 dark:text-green-200'
+                            : 'border-red-600 bg-red-50 text-red-700 dark:bg-red-950 dark:text-red-200'
+                          : 'border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300'
+                      }`}
+                    >
+                      {outcome}
+                    </button>
+                  ))}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                    Quantity
+                  </label>
+                  <input
+                    type="number"
+                    min="0.0001"
+                    step="0.0001"
+                    value={quantity}
+                    onChange={(event) => setQuantity(event.target.value)}
+                    className="w-full px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 text-slate-900 dark:text-white"
+                    required
+                  />
+                </div>
+
+                <div className="rounded-lg bg-slate-50 dark:bg-slate-950 p-3 text-sm space-y-1">
+                  <div className="flex justify-between">
+                    <span className="text-slate-600 dark:text-slate-400">Price</span>
+                    <span className="font-medium text-slate-900 dark:text-white">${formatPrice(selectedPrice)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-600 dark:text-slate-400">Estimated value</span>
+                    <span className="font-medium text-slate-900 dark:text-white">${formatPrice(estimatedCost)}</span>
+                  </div>
+                </div>
+
+                {tradeError && <p className="text-sm text-red-600 dark:text-red-400">{tradeError}</p>}
+                {tradeSuccess && <p className="text-sm text-green-600 dark:text-green-400">{tradeSuccess}</p>}
+
+                <button
+                  type="submit"
+                  disabled={tradeMutation.isPending}
+                  className="w-full px-6 py-3 rounded-lg bg-blue-600 hover:bg-blue-700 disabled:opacity-60 disabled:cursor-not-allowed text-white font-medium transition-colors"
+                >
+                  {tradeMutation.isPending ? 'Submitting...' : `${tradeType} ${outcomeName}`}
+                </button>
+              </form>
+            )}
+          </div>
         </div>
 
         {/* Right Column - Chart */}

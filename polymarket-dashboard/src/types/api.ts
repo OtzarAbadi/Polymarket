@@ -19,6 +19,62 @@ export interface AuthResponseDto {
   email: string;
   role: UserRole;
   walletBalance: number | string;
+  token: string;
+}
+
+export type TradeType = 'BUY' | 'SELL';
+export type TradeOutcomeName = 'YES' | 'NO';
+
+export interface WalletResponseDto {
+  walletId: number;
+  userId: number;
+  username: string;
+  balance: number | string;
+}
+
+export interface WalletTransactionResponseDto {
+  transactionId: number;
+  userId: number;
+  username: string;
+  type: string;
+  amount: number | string;
+  balanceAfter: number | string;
+  description?: string | null;
+  createdAt: string;
+}
+
+export interface PositionResponseDto {
+  positionId: number;
+  userId: number;
+  marketId: number;
+  marketTitle: string;
+  outcomeId: number;
+  outcomeName: string;
+  quantity: number | string;
+  currentPrice: number | string;
+  currentValue: number | string;
+  unrealizedPnL: number | string;
+}
+
+export interface TradeRequestDto {
+  userId: number;
+  marketId: number;
+  outcomeId: number;
+  quantity: number | string;
+  type: TradeType;
+}
+
+export interface TradeResponseDto {
+  tradeId: number;
+  userId: number;
+  marketId: number;
+  outcomeId: number;
+  type: TradeType;
+  quantity: number | string;
+  price: number | string;
+  totalCost: number | string;
+  walletBalanceAfterTrade: number | string;
+  positionQuantityAfterTrade: number | string;
 }
 
 export interface BackendMarketResponseDto {

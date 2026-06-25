@@ -22,7 +22,7 @@ export default function RegisterPage() {
 
     try {
       await register({ username, email, password });
-      router.push('/');
+      router.push('/markets');
     } catch (err) {
       const axiosError = err as AxiosError<{ message?: string }>;
       setError(axiosError.response?.data?.message || 'Registration failed. Check the details and try again.');

@@ -21,7 +21,7 @@ export default function LoginPage() {
 
     try {
       await login({ usernameOrEmail, password });
-      router.push('/');
+      router.push('/markets');
     } catch (err) {
       const axiosError = err as AxiosError<{ message?: string }>;
       setError(axiosError.response?.data?.message || 'Login failed. Check your credentials and try again.');

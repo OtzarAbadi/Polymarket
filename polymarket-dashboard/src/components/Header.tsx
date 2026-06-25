@@ -1,10 +1,31 @@
 'use client';
 
 import Link from 'next/link';
-import { TrendingUp } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Briefcase, LogOut, TrendingUp, Wallet } from 'lucide-react';
 import { ThemeToggle } from './ThemeToggle';
+import { AuthResponseDto } from '@/types/api';
+import { getCurrentUser, logout } from '@/services/authService';
+import { AUTH_STATE_EVENT } from '@/services/authStorage';
 
 export function Header() {
+  const [currentUser, setCurrentUser] = useState<AuthResponseDto | null>(null);
+
+  useEffect(() => {
+    const syncCurrentUser = () => setCurrentUser(getCurrentUser());
+
+    syncCurrentUser();
+    window.addEventListener(AUTH_STATE_EVENT, syncCurrentUser);
+
+    return () => window.removeEventListener(AUTH_STATE_EVENT, syncCurrentUser);
+  }, []);
+
+  const handleLogout = () => {
+    logout();
+    setCurrentUser(null);
+    window.location.href = '/login';
+  };
+
   return (
     <header className="sticky top-0 z-50 w-full border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -23,12 +44,35 @@ export function Header() {
             <Link href="/markets" className="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors">
               Markets
             </Link>
-            <Link href="/login" className="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors">
-              Login
-            </Link>
-            <Link href="/register" className="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors">
-              Register
-            </Link>
+            {currentUser ? (
+              <>
+                <Link href="/portfolio" className="flex items-center gap-1 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors">
+                  <Briefcase className="w-4 h-4" />
+                  Portfolio
+                </Link>
+                <Link href="/wallet" className="flex items-center gap-1 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors">
+                  <Wallet className="w-4 h-4" />
+                  Wallet
+                </Link>
+                <button
+                  type="button"
+                  onClick={handleLogout}
+                  className="flex items-center gap-1 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors"
+                >
+                  <LogOut className="w-4 h-4" />
+                  Logout
+                </button>
+              </>
+            ) : (
+              <>
+                <Link href="/login" className="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors">
+                  Login
+                </Link>
+                <Link href="/register" className="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors">
+                  Register
+                </Link>
+              </>
+            )}
           </nav>
           
           <ThemeToggle />
