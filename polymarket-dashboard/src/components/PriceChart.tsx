@@ -10,18 +10,17 @@ import {
   ResponsiveContainer,
   Legend,
 } from 'recharts';
+import { PriceHistoryDto } from '@/types/api';
 
 interface PriceChartProps {
-  data: Array<{
-    timestamp: number;
-    yesPrice: number;
-    noPrice: number;
-  }>;
+  data: PriceHistoryDto[];
 }
 
 export function PriceChart({ data }: PriceChartProps) {
   const chartData = data.map((item) => ({
-    ...item,
+    timestamp: item.timestamp,
+    yesPrice: Number(item.yesPrice),
+    noPrice: Number(item.noPrice),
     time: new Date(item.timestamp).toLocaleTimeString(),
   }));
 

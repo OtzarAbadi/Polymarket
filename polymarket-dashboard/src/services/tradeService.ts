@@ -10,3 +10,10 @@ export async function getTradesByMarket(marketId: number): Promise<TradeResponse
   const { data } = await apiClient.get<TradeResponseDto[]>(`/api/trades/by-market/${marketId}`);
   return data;
 }
+
+export async function getTradesByUser(userId: number): Promise<TradeResponseDto[]> {
+  const { data } = await apiClient.get<TradeResponseDto[]>(
+    `/api/trades/by-user/${userId}`
+  );
+  return data;
+}

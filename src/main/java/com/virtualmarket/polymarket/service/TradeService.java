@@ -198,12 +198,14 @@ public class TradeService {
         response.setUserId(user.getId());
         response.setMarketId(market.getId());
         response.setOutcomeId(outcome.getId());
+        response.setOutcomeName(outcome.getName());
         response.setType(type);
         response.setQuantity(quantity);
         response.setPrice(price);
         response.setTotalCost(total);
         response.setWalletBalanceAfterTrade(wallet.getBalance());
         response.setPositionQuantityAfterTrade(position.getQuantity());
+        response.setCreatedAt(trade.getCreatedAt());
 
         return response;
     }
@@ -214,11 +216,13 @@ public class TradeService {
         r.setUserId(trade.getUser().getId());
         r.setMarketId(trade.getMarket().getId());
         r.setOutcomeId(trade.getOutcome().getId());
+        r.setOutcomeName(trade.getOutcome().getName());
         r.setType(trade.getType());
         r.setQuantity(trade.getQuantity());
         r.setPrice(trade.getPricePerShare());
         r.setTotalCost(trade.getTotalCost());
         r.setWalletBalanceAfterTrade(trade.getBalanceAfterTrade());
+        r.setCreatedAt(trade.getCreatedAt());
         // try to get current position quantity
         Optional<Position> pos = positionRepository.findByUserAndMarketAndOutcome(
                 trade.getUser(), trade.getMarket(), trade.getOutcome()

@@ -2,6 +2,7 @@ package com.virtualmarket.polymarket.service;
 
 import com.virtualmarket.polymarket.dto.CreateMarketRequest;
 import com.virtualmarket.polymarket.dto.MarketResponse;
+import com.virtualmarket.polymarket.dto.PriceHistoryResponse;
 import com.virtualmarket.polymarket.entity.Market;
 import com.virtualmarket.polymarket.entity.MarketOutcome;
 import com.virtualmarket.polymarket.entity.PriceHistory;
@@ -118,6 +119,16 @@ public class MarketService {
         return toMarketResponse(market);
     }
 
+    @Transactional(readOnly = true)
+    public List<PriceHistoryResponse> getPriceHistory(Long marketId) {
+        Market market = marketRepository.findById(marketId)
+                .orElseThrow(() -> new ResponseStatusException(NOT_FOUND, "Market not found"));
+
+        return priceHistoryRepository.findByMarketOrderByCreatedAtAsc(market).stream()
+                .map(this::toPriceHistoryResponse)
+                .toList();
+    }
+
     private MarketOutcome createOutcome(Market market, String name) {
         MarketOutcome outcome = new MarketOutcome();
         outcome.setMarket(market);
@@ -150,6 +161,14 @@ public class MarketService {
                 noOutcome.getId(),
                 yesOutcome.getCurrentPrice(),
                 noOutcome.getCurrentPrice()
+        );
+    }
+
+    private PriceHistoryResponse toPriceHistoryResponse(PriceHistory priceHistory) {
+        return new PriceHistoryResponse(
+                priceHistory.getCreatedAt(),
+                priceHistory.getYesPrice(),
+                priceHistory.getNoPrice()
         );
     }
 }

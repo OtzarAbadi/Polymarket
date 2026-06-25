@@ -133,7 +133,7 @@ export interface Market {
 }
 
 export interface PriceHistory {
-  timestamp: number;
+  timestamp: string;
   yesPrice: number;
   noPrice: number;
 }
@@ -148,6 +148,12 @@ export interface MarketDetail extends Market {
     timestamp: number;
   }>;
   relatedMarkets?: Market[];
+}
+
+export interface PriceHistoryDto {
+  timestamp: string;
+  yesPrice: number;
+  noPrice: number;
 }
 
 export interface MarketsResult {

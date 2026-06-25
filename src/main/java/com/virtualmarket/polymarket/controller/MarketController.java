@@ -2,6 +2,7 @@ package com.virtualmarket.polymarket.controller;
 
 import com.virtualmarket.polymarket.dto.CreateMarketRequest;
 import com.virtualmarket.polymarket.dto.MarketResponse;
+import com.virtualmarket.polymarket.dto.PriceHistoryResponse;
 import com.virtualmarket.polymarket.dto.ResolutionRequest;
 import com.virtualmarket.polymarket.dto.ResolutionResponse;
 import com.virtualmarket.polymarket.service.MarketResolutionService;
@@ -44,6 +45,11 @@ public class MarketController {
     @GetMapping("/{id}")
     public MarketResponse getMarketById(@PathVariable Long id) {
         return marketService.getMarketById(id);
+    }
+
+    @GetMapping("/{marketId}/history")
+    public List<PriceHistoryResponse> getMarketPriceHistory(@PathVariable Long marketId) {
+        return marketService.getPriceHistory(marketId);
     }
 
     @PostMapping("/resolve")

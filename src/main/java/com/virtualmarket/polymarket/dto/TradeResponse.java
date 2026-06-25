@@ -3,6 +3,7 @@ package com.virtualmarket.polymarket.dto;
 import com.virtualmarket.polymarket.enums.TradeType;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 public class TradeResponse {
 
@@ -10,12 +11,14 @@ public class TradeResponse {
     private Long userId;
     private Long marketId;
     private Long outcomeId;
+    private String outcomeName;
     private TradeType type;
     private BigDecimal quantity;
     private BigDecimal price;
     private BigDecimal totalCost;
     private BigDecimal walletBalanceAfterTrade;
     private BigDecimal positionQuantityAfterTrade;
+    private LocalDateTime createdAt;
 
     public TradeResponse() {
     }
@@ -50,6 +53,14 @@ public class TradeResponse {
 
     public void setOutcomeId(Long outcomeId) {
         this.outcomeId = outcomeId;
+    }
+
+    public String getOutcomeName() {
+        return outcomeName;
+    }
+
+    public void setOutcomeName(String outcomeName) {
+        this.outcomeName = outcomeName;
     }
 
     public TradeType getType() {
@@ -98,5 +109,13 @@ public class TradeResponse {
 
     public void setPositionQuantityAfterTrade(BigDecimal positionQuantityAfterTrade) {
         this.positionQuantityAfterTrade = positionQuantityAfterTrade;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
     }
 }

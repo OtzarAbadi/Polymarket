@@ -4,14 +4,16 @@ import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { AxiosError } from 'axios';
-import { ArrowLeft, BarChart3 } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import { formatPrice, formatVolume, getStateColor, getStateLabel } from '@/lib/utils';
 import { MarketDetail } from '@/lib/api';
 import { PriceChart } from './PriceChart';
 import { getCurrentUser } from '@/services/authService';
 import { updateCurrentUser } from '@/services/authStorage';
+import { getMarketPriceHistory } from '@/services/marketService';
 import { executeTrade, getTradesByMarket } from '@/services/tradeService';
 import { AuthResponseDto, TradeOutcomeName, TradeResponseDto, TradeType } from '@/types/api';
+import { EmptyState, LoadingSpinner } from './Loading';
 
 interface MarketDetailProps {
   market: MarketDetail;
@@ -68,6 +70,14 @@ export function MarketDetailComponent({ market, isLoading }: MarketDetailProps) 
     refetchInterval: 5000,
   });
 
+  const priceHistoryQuery = useQuery({
+    queryKey: ['market-price-history', market.marketId],
+    queryFn: () => getMarketPriceHistory(market.marketId),
+    enabled: Boolean(market.marketId),
+    staleTime: 5000,
+    refetchInterval: 5000,
+  });
+
   const tradeMutation = useMutation({
     mutationFn: () => {
       if (!currentUser) {
@@ -98,11 +108,13 @@ export function MarketDetailComponent({ market, isLoading }: MarketDetailProps) 
       setTradeSuccess(`${tradeType} ${outcomeName} trade completed.`);
       queryClient.invalidateQueries({ queryKey: ['market', market.id] });
       queryClient.invalidateQueries({ queryKey: ['trades-by-market', market.marketId] });
+      queryClient.invalidateQueries({ queryKey: ['market-price-history', market.marketId] });
       queryClient.invalidateQueries({ queryKey: ['markets'] });
       queryClient.invalidateQueries({ queryKey: ['markets-full'] });
       queryClient.invalidateQueries({ queryKey: ['wallet', currentUser?.userId] });
       queryClient.invalidateQueries({ queryKey: ['wallet-transactions', currentUser?.userId] });
       queryClient.invalidateQueries({ queryKey: ['positions', currentUser?.userId] });
+      queryClient.invalidateQueries({ queryKey: ['trade-history', currentUser?.userId] });
     },
     onError: (err) => {
       const axiosError = err as AxiosError<{ message?: string }>;
@@ -358,20 +370,36 @@ export function MarketDetailComponent({ market, isLoading }: MarketDetailProps) 
 
         {/* Right Column - Chart */}
         <div className="lg:col-span-2">
-          {market.priceHistory && market.priceHistory.length > 0 ? (
+          {priceHistoryQuery.isLoading ? (
             <div>
               <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">
                 Price History
               </h3>
-              <PriceChart data={market.priceHistory} />
+              <div className="h-96 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900">
+                <LoadingSpinner />
+              </div>
+            </div>
+          ) : priceHistoryQuery.error ? (
+            <div className="rounded-lg border border-red-200 dark:border-red-900 bg-red-50 dark:bg-red-950 p-4 text-sm text-red-700 dark:text-red-300">
+              Unable to load price history.
+            </div>
+          ) : priceHistoryQuery.data && priceHistoryQuery.data.length > 0 ? (
+            <div>
+              <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">
+                Price History
+              </h3>
+              <PriceChart data={priceHistoryQuery.data} />
             </div>
           ) : (
-            <div className="h-96 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 flex items-center justify-center">
-              <div className="text-center">
-                <BarChart3 className="w-12 h-12 text-slate-400 mx-auto mb-2" />
-                <p className="text-slate-600 dark:text-slate-400">
-                  Price history will appear after trades are executed.
-                </p>
+            <div>
+              <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">
+                Price History
+              </h3>
+              <div className="h-96 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900">
+                <EmptyState
+                  title="No price history yet"
+                  description="Price history will appear after trades are executed."
+                />
               </div>
             </div>
           )}
