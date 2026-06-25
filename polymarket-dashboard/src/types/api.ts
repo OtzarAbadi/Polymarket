@@ -77,6 +77,22 @@ export interface TradeResponseDto {
   positionQuantityAfterTrade: number | string;
 }
 
+export interface CreateMarketRequestDto {
+  adminUserId: number;
+  title: string;
+  description?: string;
+  category: string;
+  tradingCloseDate: string;
+  resolutionDate: string;
+  resolutionSource?: string;
+}
+
+export interface ResolutionRequestDto {
+  adminUserId: number;
+  marketId: number;
+  winningOutcomeId: number;
+}
+
 export interface BackendMarketResponseDto {
   marketId: number;
   title: string;

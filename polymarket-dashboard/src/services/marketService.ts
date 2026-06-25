@@ -1,6 +1,12 @@
 import { apiClient } from './http';
 import { mapMarketResponse, mapMarketResponses } from '@/lib/mappers';
-import { BackendMarketResponseDto, MarketDetail, MarketsResult } from '@/types/api';
+import {
+  BackendMarketResponseDto,
+  CreateMarketRequestDto,
+  MarketDetail,
+  MarketsResult,
+  ResolutionRequestDto,
+} from '@/types/api';
 
 export async function getMarkets(): Promise<MarketsResult> {
   const { data } = await apiClient.get<BackendMarketResponseDto[]>('/api/markets');
@@ -15,4 +21,13 @@ export async function getMarkets(): Promise<MarketsResult> {
 export async function getMarketById(id: string | number): Promise<MarketDetail> {
   const { data } = await apiClient.get<BackendMarketResponseDto>(`/api/markets/${id}`);
   return mapMarketResponse(data);
+}
+
+export async function createMarket(request: CreateMarketRequestDto): Promise<MarketDetail> {
+  const { data } = await apiClient.post<BackendMarketResponseDto>('/api/markets/admin/markets', request);
+  return mapMarketResponse(data);
+}
+
+export async function resolveMarket(request: ResolutionRequestDto): Promise<void> {
+  await apiClient.post('/api/markets/resolve', request);
 }

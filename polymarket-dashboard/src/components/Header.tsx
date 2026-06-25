@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
-import { Briefcase, LogOut, TrendingUp, Wallet } from 'lucide-react';
+import { Briefcase, LogOut, Shield, TrendingUp, Wallet } from 'lucide-react';
 import { ThemeToggle } from './ThemeToggle';
 import { AuthResponseDto } from '@/types/api';
 import { getCurrentUser, logout } from '@/services/authService';
@@ -54,6 +54,12 @@ export function Header() {
                   <Wallet className="w-4 h-4" />
                   Wallet
                 </Link>
+                {currentUser.role === 'ADMIN' && (
+                  <Link href="/admin" className="flex items-center gap-1 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors">
+                    <Shield className="w-4 h-4" />
+                    Admin
+                  </Link>
+                )}
                 <button
                   type="button"
                   onClick={handleLogout}
