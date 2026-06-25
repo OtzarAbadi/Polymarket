@@ -4,3 +4,4 @@ target/
 .tools/
 *.iml
 .mvn/timing.properties
+.mvn/repository/
