@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { AxiosError } from 'axios';
 import { ArrowLeft, BarChart3 } from 'lucide-react';
 import { formatPrice, formatVolume, getStateColor, getStateLabel } from '@/lib/utils';
@@ -10,12 +10,31 @@ import { MarketDetail } from '@/lib/api';
 import { PriceChart } from './PriceChart';
 import { getCurrentUser } from '@/services/authService';
 import { updateCurrentUser } from '@/services/authStorage';
-import { executeTrade } from '@/services/tradeService';
-import { AuthResponseDto, TradeOutcomeName, TradeType } from '@/types/api';
+import { executeTrade, getTradesByMarket } from '@/services/tradeService';
+import { AuthResponseDto, TradeOutcomeName, TradeResponseDto, TradeType } from '@/types/api';
 
 interface MarketDetailProps {
   market: MarketDetail;
   isLoading?: boolean;
+}
+
+function toNumber(value: number | string | null | undefined): number {
+  if (value === null || value === undefined) return 0;
+  const parsed = typeof value === 'number' ? value : Number(value);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function getTradeOutcomeName(trade: TradeResponseDto, market: MarketDetail): string | null {
+  if (trade.outcomeName) return String(trade.outcomeName);
+  if (trade.outcomeId === market.yesOutcomeId) return 'YES';
+  if (trade.outcomeId === market.noOutcomeId) return 'NO';
+  return null;
+}
+
+function getTradeTime(trade: TradeResponseDto): string | null {
+  if (!trade.createdAt) return null;
+  const date = new Date(trade.createdAt);
+  return Number.isNaN(date.getTime()) ? trade.createdAt : date.toLocaleString();
 }
 
 export function MarketDetailComponent({ market, isLoading }: MarketDetailProps) {
@@ -41,6 +60,14 @@ export function MarketDetailComponent({ market, isLoading }: MarketDetailProps) 
     return parsedQuantity * selectedPrice;
   }, [parsedQuantity, selectedPrice]);
 
+  const recentTradesQuery = useQuery({
+    queryKey: ['trades-by-market', market.marketId],
+    queryFn: () => getTradesByMarket(market.marketId),
+    enabled: Boolean(market.marketId),
+    staleTime: 5000,
+    refetchInterval: 5000,
+  });
+
   const tradeMutation = useMutation({
     mutationFn: () => {
       if (!currentUser) {
@@ -51,6 +78,9 @@ export function MarketDetailComponent({ market, isLoading }: MarketDetailProps) 
       }
       if (!Number.isFinite(parsedQuantity) || parsedQuantity <= 0) {
         throw new Error('Enter a quantity greater than zero.');
+      }
+      if (tradeType !== 'BUY' && tradeType !== 'SELL') {
+        throw new Error('Trade type must be BUY or SELL.');
       }
 
       return executeTrade({
@@ -67,6 +97,9 @@ export function MarketDetailComponent({ market, isLoading }: MarketDetailProps) 
       setTradeError(null);
       setTradeSuccess(`${tradeType} ${outcomeName} trade completed.`);
       queryClient.invalidateQueries({ queryKey: ['market', market.id] });
+      queryClient.invalidateQueries({ queryKey: ['trades-by-market', market.marketId] });
+      queryClient.invalidateQueries({ queryKey: ['markets'] });
+      queryClient.invalidateQueries({ queryKey: ['markets-full'] });
       queryClient.invalidateQueries({ queryKey: ['wallet', currentUser?.userId] });
       queryClient.invalidateQueries({ queryKey: ['wallet-transactions', currentUser?.userId] });
       queryClient.invalidateQueries({ queryKey: ['positions', currentUser?.userId] });
@@ -85,8 +118,27 @@ export function MarketDetailComponent({ market, isLoading }: MarketDetailProps) 
     event.preventDefault();
     setTradeError(null);
     setTradeSuccess(null);
+    if (!currentUser) {
+      setTradeError('Login is required before trading.');
+      return;
+    }
+    if (!selectedOutcomeId) {
+      setTradeError('Selected outcome is unavailable.');
+      return;
+    }
+    if (!Number.isFinite(parsedQuantity) || parsedQuantity <= 0) {
+      setTradeError('Enter a quantity greater than zero.');
+      return;
+    }
+    if (tradeType !== 'BUY' && tradeType !== 'SELL') {
+      setTradeError('Trade type must be BUY or SELL.');
+      return;
+    }
     tradeMutation.mutate();
   };
+
+  const recentTrades = recentTradesQuery.data ?? [];
+  const showTradeTimes = recentTrades.some((trade) => Boolean(trade.createdAt));
 
   if (isLoading) {
     return <div className="text-center py-12">Loading market details...</div>;
@@ -317,7 +369,9 @@ export function MarketDetailComponent({ market, isLoading }: MarketDetailProps) 
             <div className="h-96 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 flex items-center justify-center">
               <div className="text-center">
                 <BarChart3 className="w-12 h-12 text-slate-400 mx-auto mb-2" />
-                <p className="text-slate-600 dark:text-slate-400">No price history available</p>
+                <p className="text-slate-600 dark:text-slate-400">
+                  Price history will appear after trades are executed.
+                </p>
               </div>
             </div>
           )}
@@ -325,69 +379,106 @@ export function MarketDetailComponent({ market, isLoading }: MarketDetailProps) 
       </div>
 
       {/* Recent Trades */}
-      {market.recentTrades && market.recentTrades.length > 0 && (
-        <div>
-          <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">
-            Recent Trades
-          </h3>
+      <div>
+        <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">
+          Recent Trades
+        </h3>
+        {recentTradesQuery.isLoading ? (
+          <div className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-6 text-slate-600 dark:text-slate-400">
+            Loading recent trades...
+          </div>
+        ) : recentTradesQuery.error ? (
+          <div className="rounded-lg border border-red-200 dark:border-red-900 bg-red-50 dark:bg-red-950 p-4 text-sm text-red-700 dark:text-red-300">
+            Unable to load recent trades.
+          </div>
+        ) : recentTrades.length === 0 ? (
+          <div className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-6 text-slate-600 dark:text-slate-400">
+            No trades have been executed for this market yet.
+          </div>
+        ) : (
           <div className="overflow-x-auto rounded-lg border border-slate-200 dark:border-slate-700">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900">
                   <th className="px-4 py-3 text-left font-semibold text-slate-900 dark:text-white">
+                    Type
+                  </th>
+                  <th className="px-4 py-3 text-left font-semibold text-slate-900 dark:text-white">
                     Outcome
+                  </th>
+                  <th className="px-4 py-3 text-right font-semibold text-slate-900 dark:text-white">
+                    Quantity
                   </th>
                   <th className="px-4 py-3 text-right font-semibold text-slate-900 dark:text-white">
                     Price
                   </th>
                   <th className="px-4 py-3 text-right font-semibold text-slate-900 dark:text-white">
-                    Amount
+                    Total Cost
                   </th>
                   <th className="px-4 py-3 text-right font-semibold text-slate-900 dark:text-white">
-                    Time
+                    User
                   </th>
+                  {showTradeTimes && (
+                    <th className="px-4 py-3 text-right font-semibold text-slate-900 dark:text-white">
+                      Time
+                    </th>
+                  )}
                 </tr>
               </thead>
               <tbody>
-                {market.recentTrades.map((trade) => (
-                  <tr
-                    key={trade.id}
-                    className="border-b border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-900"
-                  >
-                    <td className="px-4 py-3">
-                      <span
-                        className={`inline-block px-3 py-1 rounded-full text-xs font-medium ${
-                          trade.outcome === 'yes'
+                {recentTrades.map((trade) => {
+                  const displayedOutcomeName = getTradeOutcomeName(trade, market);
+                  const tradeTime = getTradeTime(trade);
+
+                  return (
+                    <tr
+                      key={trade.tradeId}
+                      className="border-b border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-900"
+                    >
+                      <td className="px-4 py-3">
+                        <span className={`inline-block px-3 py-1 rounded-full text-xs font-medium ${
+                          trade.type === 'BUY'
                             ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
                             : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
-                        }`}
-                      >
-                        {trade.outcome.toUpperCase()}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-right font-medium">
-                      ${formatPrice(trade.price)}
-                    </td>
-                    <td className="px-4 py-3 text-right text-slate-600 dark:text-slate-400">
-                      {formatVolume(trade.amount)}
-                    </td>
-                    <td className="px-4 py-3 text-right text-slate-600 dark:text-slate-400 text-xs">
-                      {new Date(trade.timestamp).toLocaleTimeString()}
-                    </td>
-                  </tr>
-                ))}
+                        }`}>
+                          {trade.type}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-slate-600 dark:text-slate-400">
+                        {displayedOutcomeName ?? `Outcome #${trade.outcomeId}`}
+                      </td>
+                      <td className="px-4 py-3 text-right text-slate-600 dark:text-slate-400">
+                        {toNumber(trade.quantity).toFixed(4)}
+                      </td>
+                      <td className="px-4 py-3 text-right font-medium">
+                        ${formatPrice(toNumber(trade.price))}
+                      </td>
+                      <td className="px-4 py-3 text-right text-slate-600 dark:text-slate-400">
+                        ${formatPrice(toNumber(trade.totalCost))}
+                      </td>
+                      <td className="px-4 py-3 text-right text-slate-600 dark:text-slate-400">
+                        {trade.username || `User #${trade.userId}`}
+                      </td>
+                      {showTradeTimes && (
+                        <td className="px-4 py-3 text-right text-slate-600 dark:text-slate-400 text-xs">
+                          {tradeTime ?? ''}
+                        </td>
+                      )}
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
-        </div>
-      )}
+        )}
+      </div>
 
       {/* Related Markets */}
-      {market.relatedMarkets && market.relatedMarkets.length > 0 && (
-        <div>
-          <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">
-            Related Markets
-          </h3>
+      <div>
+        <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">
+          Related Markets
+        </h3>
+        {market.relatedMarkets && market.relatedMarkets.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {market.relatedMarkets.map((relatedMarket) => (
               <Link
@@ -415,8 +506,12 @@ export function MarketDetailComponent({ market, isLoading }: MarketDetailProps) 
               </Link>
             ))}
           </div>
-        </div>
-      )}
+        ) : (
+          <div className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-6 text-slate-600 dark:text-slate-400">
+            Related markets are not available yet.
+          </div>
+        )}
+      </div>
     </div>
   );
 }

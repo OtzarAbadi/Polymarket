@@ -67,14 +67,17 @@ export interface TradeRequestDto {
 export interface TradeResponseDto {
   tradeId: number;
   userId: number;
+  username?: string | null;
   marketId: number;
   outcomeId: number;
+  outcomeName?: TradeOutcomeName | string | null;
   type: TradeType;
   quantity: number | string;
   price: number | string;
   totalCost: number | string;
   walletBalanceAfterTrade: number | string;
   positionQuantityAfterTrade: number | string;
+  createdAt?: string | null;
 }
 
 export interface CreateMarketRequestDto {
