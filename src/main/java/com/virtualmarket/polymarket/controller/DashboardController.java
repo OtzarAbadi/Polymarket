@@ -20,6 +20,9 @@ public class DashboardController {
 
     @GetMapping("/summary")
     public DashboardSummaryResponse getDashboardSummary(Authentication authentication) {
-        return statisticsService.getDashboardSummary((User) authentication.getPrincipal());
+        User user = authentication != null && authentication.getPrincipal() instanceof User
+                ? (User) authentication.getPrincipal()
+                : null;
+        return statisticsService.getDashboardSummary(user);
     }
 }

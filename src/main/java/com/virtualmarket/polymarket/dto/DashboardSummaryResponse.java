@@ -6,6 +6,7 @@ public class DashboardSummaryResponse {
 
     private long openMarkets;
     private long totalMarkets;
+    private BigDecimal averagePrice;
     private BigDecimal walletBalance;
     private BigDecimal portfolioValue;
     private long totalTrades;
@@ -17,6 +18,7 @@ public class DashboardSummaryResponse {
     public DashboardSummaryResponse(
             long openMarkets,
             long totalMarkets,
+            BigDecimal averagePrice,
             BigDecimal walletBalance,
             BigDecimal portfolioValue,
             long totalTrades,
@@ -24,6 +26,7 @@ public class DashboardSummaryResponse {
     ) {
         this.openMarkets = openMarkets;
         this.totalMarkets = totalMarkets;
+        this.averagePrice = averagePrice;
         this.walletBalance = walletBalance;
         this.portfolioValue = portfolioValue;
         this.totalTrades = totalTrades;
@@ -44,6 +47,14 @@ public class DashboardSummaryResponse {
 
     public void setTotalMarkets(long totalMarkets) {
         this.totalMarkets = totalMarkets;
+    }
+
+    public BigDecimal getAveragePrice() {
+        return averagePrice;
+    }
+
+    public void setAveragePrice(BigDecimal averagePrice) {
+        this.averagePrice = averagePrice;
     }
 
     public BigDecimal getWalletBalance() {

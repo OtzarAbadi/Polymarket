@@ -178,6 +178,7 @@ export interface MarketStatisticsDto {
 export interface DashboardSummaryDto {
   openMarkets: number;
   totalMarkets: number;
+  averagePrice: number | string;
   walletBalance: number | string;
   portfolioValue: number | string;
   totalTrades: number;

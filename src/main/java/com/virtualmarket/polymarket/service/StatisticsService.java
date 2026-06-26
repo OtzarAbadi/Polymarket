@@ -3,9 +3,11 @@ package com.virtualmarket.polymarket.service;
 import com.virtualmarket.polymarket.dto.DashboardSummaryResponse;
 import com.virtualmarket.polymarket.dto.MarketStatisticsResponse;
 import com.virtualmarket.polymarket.entity.Market;
+import com.virtualmarket.polymarket.entity.MarketOutcome;
 import com.virtualmarket.polymarket.entity.Position;
 import com.virtualmarket.polymarket.entity.User;
 import com.virtualmarket.polymarket.enums.MarketStatus;
+import com.virtualmarket.polymarket.repository.MarketOutcomeRepository;
 import com.virtualmarket.polymarket.repository.MarketRepository;
 import com.virtualmarket.polymarket.repository.PositionRepository;
 import com.virtualmarket.polymarket.repository.TradeRepository;
@@ -23,19 +25,23 @@ import java.util.List;
 public class StatisticsService {
 
     private static final int MONEY_SCALE = 4;
+    private static final String YES_OUTCOME = "YES";
 
     private final MarketRepository marketRepository;
+    private final MarketOutcomeRepository marketOutcomeRepository;
     private final TradeRepository tradeRepository;
     private final WalletRepository walletRepository;
     private final PositionRepository positionRepository;
 
     public StatisticsService(
             MarketRepository marketRepository,
+            MarketOutcomeRepository marketOutcomeRepository,
             TradeRepository tradeRepository,
             WalletRepository walletRepository,
             PositionRepository positionRepository
     ) {
         this.marketRepository = marketRepository;
+        this.marketOutcomeRepository = marketOutcomeRepository;
         this.tradeRepository = tradeRepository;
         this.walletRepository = walletRepository;
         this.positionRepository = positionRepository;
@@ -57,6 +63,12 @@ public class StatisticsService {
 
     @Transactional(readOnly = true)
     public DashboardSummaryResponse getDashboardSummary(User user) {
+        DashboardSummaryResponse publicSummary = getPublicDashboardSummary();
+
+        if (user == null) {
+            return publicSummary;
+        }
+
         BigDecimal walletBalance = walletRepository.findByUser(user)
                 .map(wallet -> normalizeMoney(wallet.getBalance()))
                 .orElse(BigDecimal.ZERO.setScale(MONEY_SCALE, RoundingMode.HALF_UP));
@@ -71,13 +83,43 @@ public class StatisticsService {
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         return new DashboardSummaryResponse(
-                marketRepository.countByStatus(MarketStatus.OPEN),
-                marketRepository.count(),
+                publicSummary.getOpenMarkets(),
+                publicSummary.getTotalMarkets(),
+                publicSummary.getAveragePrice(),
                 walletBalance,
                 normalizeMoney(walletBalance.add(positionsValue)),
                 tradeRepository.countByUser(user),
                 openPositions.size()
         );
+    }
+
+    private DashboardSummaryResponse getPublicDashboardSummary() {
+        BigDecimal zero = BigDecimal.ZERO.setScale(MONEY_SCALE, RoundingMode.HALF_UP);
+
+        return new DashboardSummaryResponse(
+                marketRepository.countByStatus(MarketStatus.OPEN),
+                marketRepository.count(),
+                calculateAverageYesPrice(),
+                zero,
+                zero,
+                0,
+                0
+        );
+    }
+
+    private BigDecimal calculateAverageYesPrice() {
+        List<Market> markets = marketRepository.findAll();
+        if (markets.isEmpty()) {
+            return BigDecimal.ZERO.setScale(MONEY_SCALE, RoundingMode.HALF_UP);
+        }
+
+        BigDecimal total = markets.stream()
+                .map(market -> marketOutcomeRepository.findByMarketAndName(market, YES_OUTCOME)
+                        .map(MarketOutcome::getCurrentPrice)
+                        .orElse(BigDecimal.ZERO))
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        return total.divide(BigDecimal.valueOf(markets.size()), MONEY_SCALE, RoundingMode.HALF_UP);
     }
 
     private BigDecimal calculatePositionValue(Position position) {

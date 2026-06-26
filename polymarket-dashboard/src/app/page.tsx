@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { fetchMarkets } from '@/lib/api';
 import { StatsCards } from '@/components/StatsCards';
@@ -10,7 +9,7 @@ import { LoadingSpinner, ErrorBoundary } from '@/components/Loading';
 import { getCurrentUser } from '@/services/authService';
 import { getDashboardSummary } from '@/services/dashboardService';
 import { AuthResponseDto } from '@/types/api';
-import { Activity, Briefcase, Target, TrendingUp, Wallet, Zap } from 'lucide-react';
+import { Activity, BarChart3, Briefcase, Target, TrendingUp, Wallet, Zap } from 'lucide-react';
 
 function toNumber(value: number | string | null | undefined): number {
   if (value === null || value === undefined) return 0;
@@ -26,17 +25,11 @@ function formatMoney(value: number | string): string {
 }
 
 export default function DashboardPage() {
-  const router = useRouter();
   const [currentUser, setCurrentUser] = useState<AuthResponseDto | null>(null);
 
   useEffect(() => {
-    const user = getCurrentUser();
-    if (!user) {
-      router.replace('/login');
-      return;
-    }
-    setCurrentUser(user);
-  }, [router]);
+    setCurrentUser(getCurrentUser());
+  }, []);
 
   const { data, isLoading, error } = useQuery({
     queryKey: ['markets'],
@@ -48,19 +41,24 @@ export default function DashboardPage() {
   const dashboardSummaryQuery = useQuery({
     queryKey: ['dashboard-summary'],
     queryFn: getDashboardSummary,
-    enabled: Boolean(currentUser),
     staleTime: 5000,
     refetchInterval: 5000,
   });
 
-  if (!currentUser) return <LoadingSpinner />;
-
-  if (error || dashboardSummaryQuery.error) {
+  if (error || (currentUser && dashboardSummaryQuery.error)) {
     return <ErrorBoundary error={(error || dashboardSummaryQuery.error) as Error} />;
   }
 
   const markets = data?.markets || [];
   const dashboardSummary = dashboardSummaryQuery.data;
+  const totalMarkets = data?.total || 0;
+  const openMarkets = markets.filter((market) => market.state === 'active').length;
+  const averagePrice = markets.length > 0
+    ? markets.reduce((sum, market) => sum + market.yesPrice, 0) / markets.length
+    : 0;
+  const displayedAveragePrice = dashboardSummary?.averagePrice !== undefined
+    ? toNumber(dashboardSummary.averagePrice)
+    : averagePrice;
   const topGainers = [...markets]
     .sort((a, b) => b.yesPrice - a.yesPrice)
     .slice(0, 3);
@@ -68,34 +66,45 @@ export default function DashboardPage() {
   const stats = [
     {
       label: 'Total Markets',
-      value: dashboardSummary?.totalMarkets ?? 0,
+      value: dashboardSummary?.totalMarkets ?? totalMarkets,
       icon: <Target className="w-6 h-6" />,
     },
     {
       label: 'Open Markets',
-      value: dashboardSummary?.openMarkets ?? 0,
+      value: dashboardSummary?.openMarkets ?? openMarkets,
       icon: <Activity className="w-6 h-6" />,
     },
-    {
-      label: 'Wallet Balance',
-      value: formatMoney(dashboardSummary?.walletBalance ?? 0),
-      icon: <Wallet className="w-6 h-6" />,
-    },
-    {
-      label: 'Portfolio Value',
-      value: formatMoney(dashboardSummary?.portfolioValue ?? 0),
-      icon: <Briefcase className="w-6 h-6" />,
-    },
-    {
-      label: 'Total Trades',
-      value: dashboardSummary?.totalTrades ?? 0,
-      icon: <Zap className="w-6 h-6" />,
-    },
-    {
-      label: 'Open Positions',
-      value: dashboardSummary?.openPositions ?? 0,
-      icon: <TrendingUp className="w-6 h-6" />,
-    },
+    ...(markets.length > 0
+      ? [{
+          label: 'Avg. Price',
+          value: displayedAveragePrice.toFixed(2),
+          icon: <Zap className="w-6 h-6" />,
+        }]
+      : []),
+    ...(currentUser && dashboardSummary
+      ? [
+          {
+            label: 'Wallet Balance',
+            value: formatMoney(dashboardSummary.walletBalance),
+            icon: <Wallet className="w-6 h-6" />,
+          },
+          {
+            label: 'Portfolio Value',
+            value: formatMoney(dashboardSummary.portfolioValue),
+            icon: <Briefcase className="w-6 h-6" />,
+          },
+          {
+            label: 'Total Trades',
+            value: dashboardSummary.totalTrades,
+            icon: <TrendingUp className="w-6 h-6" />,
+          },
+          {
+            label: 'Open Positions',
+            value: dashboardSummary.openPositions,
+            icon: <BarChart3 className="w-6 h-6" />,
+          },
+        ]
+      : []),
   ];
 
   return (
@@ -111,7 +120,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Stats Cards */}
-      {dashboardSummaryQuery.isLoading ? (
+      {currentUser && dashboardSummaryQuery.isLoading ? (
         <LoadingSpinner />
       ) : (
         <StatsCards stats={stats} />
