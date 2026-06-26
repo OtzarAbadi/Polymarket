@@ -1,4 +1,4 @@
-import { apiClient } from './http';
+import { apiClient, authRequestConfig } from './http';
 import { PositionResponseDto } from '@/types/api';
 
 export async function getPositionsByUserId(userId: number): Promise<PositionResponseDto[]> {
@@ -7,6 +7,6 @@ export async function getPositionsByUserId(userId: number): Promise<PositionResp
 }
 
 export async function getMyPositions(): Promise<PositionResponseDto[]> {
-  const { data } = await apiClient.get<PositionResponseDto[]>('/api/positions/me');
+  const { data } = await apiClient.get<PositionResponseDto[]>('/api/positions/me', authRequestConfig());
   return data;
 }

@@ -1,4 +1,4 @@
-import { apiClient } from './http';
+import { apiClient, authRequestConfig } from './http';
 import { TradeRequestDto, TradeResponseDto } from '@/types/api';
 
 export async function executeTrade(request: TradeRequestDto): Promise<TradeResponseDto> {
@@ -19,6 +19,6 @@ export async function getTradesByUser(userId: number): Promise<TradeResponseDto[
 }
 
 export async function getMyTrades(): Promise<TradeResponseDto[]> {
-  const { data } = await apiClient.get<TradeResponseDto[]>('/api/trades/me');
+  const { data } = await apiClient.get<TradeResponseDto[]>('/api/trades/me', authRequestConfig());
   return data;
 }

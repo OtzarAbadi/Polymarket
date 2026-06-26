@@ -10,6 +10,14 @@ export const apiClient = axios.create({
   },
 });
 
+export function authRequestConfig() {
+  const token = getAuthToken();
+
+  return {
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+  };
+}
+
 apiClient.interceptors.request.use((config) => {
   const token = getAuthToken();
 

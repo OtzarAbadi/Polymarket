@@ -1,4 +1,4 @@
-import { apiClient } from './http';
+import { apiClient, authRequestConfig } from './http';
 import { WalletResponseDto, WalletTransactionResponseDto } from '@/types/api';
 
 export async function getWalletByUserId(userId: number): Promise<WalletResponseDto> {
@@ -12,11 +12,14 @@ export async function getWalletTransactionsByUserId(userId: number): Promise<Wal
 }
 
 export async function getMyWallet(): Promise<WalletResponseDto> {
-  const { data } = await apiClient.get<WalletResponseDto>('/api/wallets/me');
+  const { data } = await apiClient.get<WalletResponseDto>('/api/wallets/me', authRequestConfig());
   return data;
 }
 
 export async function getMyWalletTransactions(): Promise<WalletTransactionResponseDto[]> {
-  const { data } = await apiClient.get<WalletTransactionResponseDto[]>('/api/wallets/me/transactions');
+  const { data } = await apiClient.get<WalletTransactionResponseDto[]>(
+    '/api/wallets/me/transactions',
+    authRequestConfig()
+  );
   return data;
 }
