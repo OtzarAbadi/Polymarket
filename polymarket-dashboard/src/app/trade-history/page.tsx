@@ -1,15 +1,15 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useQueries, useQuery } from '@tanstack/react-query';
-import { getCurrentUser } from '@/services/authService';
 import { getMarketById } from '@/services/marketService';
 import { getMyTrades } from '@/services/tradeService';
-import { AuthResponseDto, MarketDetail, TradeResponseDto } from '@/types/api';
+import { MarketDetail, TradeResponseDto } from '@/types/api';
 import { formatPrice } from '@/lib/utils';
 import { EmptyState, ErrorBoundary, LoadingSpinner } from '@/components/Loading';
+import { useAuth } from '@/contexts/AuthContext';
 
 function toNumber(value: number | string | null | undefined): number {
   if (value === null || value === undefined) return 0;
@@ -50,21 +50,18 @@ function getOutcomeName(trade: TradeResponseDto, market?: MarketDetail): string 
 
 export default function TradeHistoryPage() {
   const router = useRouter();
-  const [currentUser, setCurrentUser] = useState<AuthResponseDto | null>(null);
+  const { currentUser, isAuthInitialized } = useAuth();
 
   useEffect(() => {
-    const user = getCurrentUser();
-    if (!user) {
+    if (isAuthInitialized && !currentUser) {
       router.replace('/login');
-      return;
     }
-    setCurrentUser(user);
-  }, [router]);
+  }, [currentUser, isAuthInitialized, router]);
 
   const tradesQuery = useQuery({
     queryKey: ['trade-history', currentUser?.userId],
     queryFn: getMyTrades,
-    enabled: Boolean(currentUser?.userId),
+    enabled: isAuthInitialized && Boolean(currentUser?.userId),
     retry: false,
   });
 
@@ -78,7 +75,7 @@ export default function TradeHistoryPage() {
     queries: marketIds.map((marketId) => ({
       queryKey: ['market', marketId],
       queryFn: () => getMarketById(marketId),
-      enabled: Boolean(currentUser?.userId),
+      enabled: isAuthInitialized && Boolean(currentUser?.userId),
       retry: false,
     })),
   });
@@ -93,7 +90,7 @@ export default function TradeHistoryPage() {
     return map;
   }, [marketQueries]);
 
-  if (!currentUser) return <LoadingSpinner />;
+  if (!isAuthInitialized || !currentUser) return <LoadingSpinner />;
 
   const marketError = marketQueries.find((query) => query.error)?.error;
   if (tradesQuery.error || marketError) {

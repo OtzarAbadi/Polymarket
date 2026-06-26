@@ -1,19 +1,19 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { AxiosError } from 'axios';
 import { ArrowLeft } from 'lucide-react';
 import { formatPrice, formatVolume, getStateColor, getStateLabel } from '@/lib/utils';
 import { MarketDetail } from '@/lib/api';
 import { PriceChart } from './PriceChart';
-import { getCurrentUser } from '@/services/authService';
 import { updateCurrentUser } from '@/services/authStorage';
 import { getMarketPriceHistory, getMarketStatistics } from '@/services/marketService';
 import { executeTrade, getTradesByMarket } from '@/services/tradeService';
-import { AuthResponseDto, TradeOutcomeName, TradeResponseDto, TradeType } from '@/types/api';
+import { TradeOutcomeName, TradeResponseDto, TradeType } from '@/types/api';
 import { EmptyState, LoadingSpinner } from './Loading';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface MarketDetailProps {
   market: MarketDetail;
@@ -41,16 +41,12 @@ function getTradeTime(trade: TradeResponseDto): string | null {
 
 export function MarketDetailComponent({ market, isLoading }: MarketDetailProps) {
   const queryClient = useQueryClient();
-  const [currentUser, setCurrentUser] = useState<AuthResponseDto | null>(null);
+  const { currentUser, refreshCurrentUser } = useAuth();
   const [tradeType, setTradeType] = useState<TradeType>('BUY');
   const [outcomeName, setOutcomeName] = useState<TradeOutcomeName>('YES');
   const [quantity, setQuantity] = useState('1');
   const [tradeError, setTradeError] = useState<string | null>(null);
   const [tradeSuccess, setTradeSuccess] = useState<string | null>(null);
-
-  useEffect(() => {
-    setCurrentUser(getCurrentUser());
-  }, []);
 
   const yesPercentage = (market.yesPrice * 100).toFixed(1);
   const noPercentage = ((1 - market.yesPrice) * 100).toFixed(1);
@@ -111,7 +107,7 @@ export function MarketDetailComponent({ market, isLoading }: MarketDetailProps) 
     },
     onSuccess: (response) => {
       updateCurrentUser({ walletBalance: response.walletBalanceAfterTrade });
-      setCurrentUser(getCurrentUser());
+      refreshCurrentUser();
       setTradeError(null);
       setTradeSuccess(`${tradeType} ${outcomeName} trade completed.`);
       queryClient.invalidateQueries({ queryKey: ['market', market.id] });

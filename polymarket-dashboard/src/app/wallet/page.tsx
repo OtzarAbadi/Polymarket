@@ -1,12 +1,11 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { CreditCard, Receipt } from 'lucide-react';
-import { getCurrentUser } from '@/services/authService';
 import { getMyWallet, getMyWalletTransactions } from '@/services/walletService';
-import { AuthResponseDto } from '@/types/api';
+import { useAuth } from '@/contexts/AuthContext';
 import { LoadingSpinner, ErrorBoundary } from '@/components/Loading';
 
 function toNumber(value: number | string | null | undefined): number {
@@ -24,32 +23,29 @@ function formatMoney(value: number | string): string {
 
 export default function WalletPage() {
   const router = useRouter();
-  const [currentUser, setCurrentUser] = useState<AuthResponseDto | null>(null);
+  const { currentUser, isAuthInitialized } = useAuth();
 
   useEffect(() => {
-    const user = getCurrentUser();
-    if (!user) {
+    if (isAuthInitialized && !currentUser) {
       router.replace('/login');
-      return;
     }
-    setCurrentUser(user);
-  }, [router]);
+  }, [currentUser, isAuthInitialized, router]);
 
   const walletQuery = useQuery({
     queryKey: ['wallet', currentUser?.userId],
     queryFn: getMyWallet,
-    enabled: Boolean(currentUser?.userId),
+    enabled: isAuthInitialized && Boolean(currentUser?.userId),
     retry: false,
   });
 
   const transactionsQuery = useQuery({
     queryKey: ['wallet-transactions', currentUser?.userId],
     queryFn: getMyWalletTransactions,
-    enabled: Boolean(currentUser?.userId),
+    enabled: isAuthInitialized && Boolean(currentUser?.userId),
     retry: false,
   });
 
-  if (!currentUser) return <LoadingSpinner />;
+  if (!isAuthInitialized || !currentUser) return <LoadingSpinner />;
 
   if (walletQuery.error || transactionsQuery.error) {
     return <ErrorBoundary error={(walletQuery.error || transactionsQuery.error) as Error} />;

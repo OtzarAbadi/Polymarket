@@ -1,11 +1,9 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { API_BASE_URL } from '@/services/http';
-import { getCurrentUser } from '@/services/authService';
-import { AUTH_STATE_EVENT } from '@/services/authStorage';
-import { AuthResponseDto } from '@/types/api';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface MarketEventPayload {
   marketId?: number;
@@ -29,16 +27,7 @@ function streamUrl(): string {
 
 export function useSseEvents() {
   const queryClient = useQueryClient();
-  const [currentUser, setCurrentUser] = useState<AuthResponseDto | null>(null);
-
-  useEffect(() => {
-    const syncCurrentUser = () => setCurrentUser(getCurrentUser());
-
-    syncCurrentUser();
-    window.addEventListener(AUTH_STATE_EVENT, syncCurrentUser);
-
-    return () => window.removeEventListener(AUTH_STATE_EVENT, syncCurrentUser);
-  }, []);
+  const { currentUser } = useAuth();
 
   useEffect(() => {
     if (!currentUser || typeof window === 'undefined') return;

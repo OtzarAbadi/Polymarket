@@ -1,15 +1,13 @@
 'use client';
 
-import { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { fetchMarkets } from '@/lib/api';
 import { StatsCards } from '@/components/StatsCards';
 import { MarketsList } from '@/components/MarketsList';
 import { LoadingSpinner, ErrorBoundary } from '@/components/Loading';
-import { getCurrentUser } from '@/services/authService';
 import { getDashboardSummary } from '@/services/dashboardService';
-import { AuthResponseDto } from '@/types/api';
 import { Activity, BarChart3, Briefcase, Target, TrendingUp, Wallet, Zap } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
 
 function toNumber(value: number | string | null | undefined): number {
   if (value === null || value === undefined) return 0;
@@ -25,11 +23,7 @@ function formatMoney(value: number | string): string {
 }
 
 export default function DashboardPage() {
-  const [currentUser, setCurrentUser] = useState<AuthResponseDto | null>(null);
-
-  useEffect(() => {
-    setCurrentUser(getCurrentUser());
-  }, []);
+  const { currentUser, isAuthInitialized } = useAuth();
 
   const { data, isLoading, error } = useQuery({
     queryKey: ['markets'],
@@ -45,7 +39,7 @@ export default function DashboardPage() {
     refetchInterval: 5000,
   });
 
-  if (error || (currentUser && dashboardSummaryQuery.error)) {
+  if (error || (isAuthInitialized && currentUser && dashboardSummaryQuery.error)) {
     return <ErrorBoundary error={(error || dashboardSummaryQuery.error) as Error} />;
   }
 
@@ -81,7 +75,7 @@ export default function DashboardPage() {
           icon: <Zap className="w-6 h-6" />,
         }]
       : []),
-    ...(currentUser && dashboardSummary
+    ...(isAuthInitialized && currentUser && dashboardSummary
       ? [
           {
             label: 'Wallet Balance',
@@ -120,7 +114,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Stats Cards */}
-      {currentUser && dashboardSummaryQuery.isLoading ? (
+      {isAuthInitialized && currentUser && dashboardSummaryQuery.isLoading ? (
         <LoadingSpinner />
       ) : (
         <StatsCards stats={stats} />

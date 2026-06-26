@@ -1,14 +1,13 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { BarChart3, Briefcase, Mail, Shield, User, Wallet } from 'lucide-react';
-import { getCurrentUser } from '@/services/authService';
 import { getMyPositions } from '@/services/positionService';
 import { getMyTrades } from '@/services/tradeService';
 import { getMyWallet } from '@/services/walletService';
-import { AuthResponseDto } from '@/types/api';
+import { useAuth } from '@/contexts/AuthContext';
 import { ErrorBoundary, LoadingSpinner } from '@/components/Loading';
 
 function toNumber(value: number | string | null | undefined): number {
@@ -26,39 +25,36 @@ function formatMoney(value: number | string | null | undefined): string {
 
 export default function ProfilePage() {
   const router = useRouter();
-  const [currentUser, setCurrentUser] = useState<AuthResponseDto | null>(null);
+  const { currentUser, isAuthInitialized } = useAuth();
 
   useEffect(() => {
-    const user = getCurrentUser();
-    if (!user) {
+    if (isAuthInitialized && !currentUser) {
       router.replace('/login');
-      return;
     }
-    setCurrentUser(user);
-  }, [router]);
+  }, [currentUser, isAuthInitialized, router]);
 
   const walletQuery = useQuery({
     queryKey: ['wallet', currentUser?.userId],
     queryFn: getMyWallet,
-    enabled: Boolean(currentUser?.userId),
+    enabled: isAuthInitialized && Boolean(currentUser?.userId),
     retry: false,
   });
 
   const tradesQuery = useQuery({
     queryKey: ['trade-history', currentUser?.userId],
     queryFn: getMyTrades,
-    enabled: Boolean(currentUser?.userId),
+    enabled: isAuthInitialized && Boolean(currentUser?.userId),
     retry: false,
   });
 
   const positionsQuery = useQuery({
     queryKey: ['positions', currentUser?.userId],
     queryFn: getMyPositions,
-    enabled: Boolean(currentUser?.userId),
+    enabled: isAuthInitialized && Boolean(currentUser?.userId),
     retry: false,
   });
 
-  if (!currentUser) return <LoadingSpinner />;
+  if (!isAuthInitialized || !currentUser) return <LoadingSpinner />;
 
   if (walletQuery.error || tradesQuery.error || positionsQuery.error) {
     return <ErrorBoundary error={(walletQuery.error || tradesQuery.error || positionsQuery.error) as Error} />;

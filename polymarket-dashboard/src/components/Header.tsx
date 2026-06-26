@@ -1,28 +1,15 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
 import { Briefcase, LogOut, Medal, Shield, TrendingUp, User, Wallet } from 'lucide-react';
 import { ThemeToggle } from './ThemeToggle';
-import { AuthResponseDto } from '@/types/api';
-import { getCurrentUser, logout } from '@/services/authService';
-import { AUTH_STATE_EVENT } from '@/services/authStorage';
+import { useAuth } from '@/contexts/AuthContext';
 
 export function Header() {
-  const [currentUser, setCurrentUser] = useState<AuthResponseDto | null>(null);
-
-  useEffect(() => {
-    const syncCurrentUser = () => setCurrentUser(getCurrentUser());
-
-    syncCurrentUser();
-    window.addEventListener(AUTH_STATE_EVENT, syncCurrentUser);
-
-    return () => window.removeEventListener(AUTH_STATE_EVENT, syncCurrentUser);
-  }, []);
+  const { currentUser, logout } = useAuth();
 
   const handleLogout = () => {
     logout();
-    setCurrentUser(null);
     window.location.href = '/login';
   };
 

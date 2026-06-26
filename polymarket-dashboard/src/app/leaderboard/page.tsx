@@ -1,13 +1,13 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { BarChart3, Crown, Medal, Trophy, User } from 'lucide-react';
-import { getCurrentUser } from '@/services/authService';
 import { getLeaderboard } from '@/services/leaderboardService';
-import { AuthResponseDto, LeaderboardResponseDto } from '@/types/api';
+import { LeaderboardResponseDto } from '@/types/api';
 import { EmptyState, ErrorBoundary, LoadingSpinner } from '@/components/Loading';
+import { useAuth } from '@/contexts/AuthContext';
 
 function toNumber(value: number | string | null | undefined): number {
   if (value === null || value === undefined) return 0;
@@ -79,25 +79,22 @@ function LeaderboardRow({ trader }: { trader: LeaderboardResponseDto }) {
 
 export default function LeaderboardPage() {
   const router = useRouter();
-  const [currentUser, setCurrentUser] = useState<AuthResponseDto | null>(null);
+  const { currentUser, isAuthInitialized } = useAuth();
 
   useEffect(() => {
-    const user = getCurrentUser();
-    if (!user) {
+    if (isAuthInitialized && !currentUser) {
       router.replace('/login');
-      return;
     }
-    setCurrentUser(user);
-  }, [router]);
+  }, [currentUser, isAuthInitialized, router]);
 
   const leaderboardQuery = useQuery({
     queryKey: ['leaderboard'],
     queryFn: getLeaderboard,
-    enabled: Boolean(currentUser),
+    enabled: isAuthInitialized && Boolean(currentUser),
     retry: false,
   });
 
-  if (!currentUser) return <LoadingSpinner />;
+  if (!isAuthInitialized || !currentUser) return <LoadingSpinner />;
 
   if (leaderboardQuery.error) {
     return <ErrorBoundary error={leaderboardQuery.error as Error} />;

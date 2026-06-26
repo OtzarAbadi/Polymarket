@@ -6,9 +6,9 @@ import { AxiosError } from 'axios';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { CheckCircle, Shield, Wrench } from 'lucide-react';
 import { createMarket, getMarkets, resolveMarket } from '@/services/marketService';
-import { getCurrentUser } from '@/services/authService';
-import { AuthResponseDto, Market, TradeOutcomeName } from '@/types/api';
+import { Market, TradeOutcomeName } from '@/types/api';
 import { ErrorBoundary, LoadingSpinner } from '@/components/Loading';
+import { useAuth } from '@/contexts/AuthContext';
 
 type MarketFormState = {
   title: string;
@@ -53,33 +53,29 @@ function isResolvable(market: Market, now: number): boolean {
 export default function AdminPage() {
   const router = useRouter();
   const queryClient = useQueryClient();
-  const [currentUser, setCurrentUser] = useState<AuthResponseDto | null>(null);
-  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+  const { currentUser, isAuthInitialized } = useAuth();
   const [form, setForm] = useState<MarketFormState>(emptyForm);
   const [message, setMessage] = useState<string | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
   const [resolveError, setResolveError] = useState<string | null>(null);
 
   useEffect(() => {
-    const user = getCurrentUser();
-    if (!user) {
+    if (!isAuthInitialized) return;
+
+    if (!currentUser) {
       router.replace('/login');
       return;
     }
 
-    if (user.role !== 'ADMIN') {
+    if (currentUser.role !== 'ADMIN') {
       router.replace('/markets');
-      return;
     }
-
-    setCurrentUser(user);
-    setIsCheckingAuth(false);
-  }, [router]);
+  }, [currentUser, isAuthInitialized, router]);
 
   const marketsQuery = useQuery({
     queryKey: ['admin-markets'],
     queryFn: getMarkets,
-    enabled: currentUser?.role === 'ADMIN',
+    enabled: isAuthInitialized && currentUser?.role === 'ADMIN',
   });
 
   const createMarketMutation = useMutation({
@@ -160,7 +156,7 @@ export default function AdminPage() {
     resolveMarketMutation.mutate({ market, outcome: normalizedOutcome });
   };
 
-  if (isCheckingAuth) return <LoadingSpinner />;
+  if (!isAuthInitialized) return <LoadingSpinner />;
 
   if (!currentUser || currentUser.role !== 'ADMIN') {
     return (
