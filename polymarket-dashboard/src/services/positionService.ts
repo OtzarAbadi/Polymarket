@@ -5,3 +5,8 @@ export async function getPositionsByUserId(userId: number): Promise<PositionResp
   const { data } = await apiClient.get<PositionResponseDto[]>(`/api/positions/user/${userId}`);
   return data;
 }
+
+export async function getMyPositions(): Promise<PositionResponseDto[]> {
+  const { data } = await apiClient.get<PositionResponseDto[]>('/api/positions/me');
+  return data;
+}

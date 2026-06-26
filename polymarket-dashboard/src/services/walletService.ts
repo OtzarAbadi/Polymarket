@@ -10,3 +10,13 @@ export async function getWalletTransactionsByUserId(userId: number): Promise<Wal
   const { data } = await apiClient.get<WalletTransactionResponseDto[]>(`/api/wallets/user/${userId}/transactions`);
   return data;
 }
+
+export async function getMyWallet(): Promise<WalletResponseDto> {
+  const { data } = await apiClient.get<WalletResponseDto>('/api/wallets/me');
+  return data;
+}
+
+export async function getMyWalletTransactions(): Promise<WalletTransactionResponseDto[]> {
+  const { data } = await apiClient.get<WalletTransactionResponseDto[]>('/api/wallets/me/transactions');
+  return data;
+}

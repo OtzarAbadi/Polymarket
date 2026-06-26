@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { CreditCard, Receipt } from 'lucide-react';
 import { getCurrentUser } from '@/services/authService';
-import { getWalletByUserId, getWalletTransactionsByUserId } from '@/services/walletService';
+import { getMyWallet, getMyWalletTransactions } from '@/services/walletService';
 import { AuthResponseDto } from '@/types/api';
 import { LoadingSpinner, ErrorBoundary } from '@/components/Loading';
 
@@ -37,14 +37,14 @@ export default function WalletPage() {
 
   const walletQuery = useQuery({
     queryKey: ['wallet', currentUser?.userId],
-    queryFn: () => getWalletByUserId(currentUser!.userId),
+    queryFn: getMyWallet,
     enabled: Boolean(currentUser?.userId),
     retry: false,
   });
 
   const transactionsQuery = useQuery({
     queryKey: ['wallet-transactions', currentUser?.userId],
-    queryFn: () => getWalletTransactionsByUserId(currentUser!.userId),
+    queryFn: getMyWalletTransactions,
     enabled: Boolean(currentUser?.userId),
     retry: false,
   });

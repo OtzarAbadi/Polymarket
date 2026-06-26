@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { Briefcase } from 'lucide-react';
 import { getCurrentUser } from '@/services/authService';
-import { getPositionsByUserId } from '@/services/positionService';
+import { getMyPositions } from '@/services/positionService';
 import { AuthResponseDto } from '@/types/api';
 import { LoadingSpinner, ErrorBoundary } from '@/components/Loading';
 
@@ -38,8 +38,9 @@ export default function PortfolioPage() {
 
   const positionsQuery = useQuery({
     queryKey: ['positions', currentUser?.userId],
-    queryFn: () => getPositionsByUserId(currentUser!.userId),
+    queryFn: getMyPositions,
     enabled: Boolean(currentUser?.userId),
+    retry: false,
   });
 
   if (!currentUser) return <LoadingSpinner />;

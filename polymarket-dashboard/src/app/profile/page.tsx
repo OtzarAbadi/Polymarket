@@ -5,9 +5,9 @@ import { useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { BarChart3, Briefcase, Mail, Shield, User, Wallet } from 'lucide-react';
 import { getCurrentUser } from '@/services/authService';
-import { getPositionsByUserId } from '@/services/positionService';
+import { getMyPositions } from '@/services/positionService';
 import { getMyTrades } from '@/services/tradeService';
-import { getWalletByUserId } from '@/services/walletService';
+import { getMyWallet } from '@/services/walletService';
 import { AuthResponseDto } from '@/types/api';
 import { ErrorBoundary, LoadingSpinner } from '@/components/Loading';
 
@@ -39,7 +39,7 @@ export default function ProfilePage() {
 
   const walletQuery = useQuery({
     queryKey: ['wallet', currentUser?.userId],
-    queryFn: () => getWalletByUserId(currentUser!.userId),
+    queryFn: getMyWallet,
     enabled: Boolean(currentUser?.userId),
     retry: false,
   });
@@ -53,7 +53,7 @@ export default function ProfilePage() {
 
   const positionsQuery = useQuery({
     queryKey: ['positions', currentUser?.userId],
-    queryFn: () => getPositionsByUserId(currentUser!.userId),
+    queryFn: getMyPositions,
     enabled: Boolean(currentUser?.userId),
     retry: false,
   });

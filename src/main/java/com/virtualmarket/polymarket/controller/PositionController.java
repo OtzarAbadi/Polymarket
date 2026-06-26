@@ -1,11 +1,16 @@
 package com.virtualmarket.polymarket.controller;
 
 import com.virtualmarket.polymarket.dto.PositionResponse;
+import com.virtualmarket.polymarket.entity.User;
+import com.virtualmarket.polymarket.enums.UserRole;
 import com.virtualmarket.polymarket.service.PositionService;
+import org.springframework.http.HttpStatus;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 
@@ -20,12 +25,30 @@ public class PositionController {
     }
 
     @GetMapping("/user/{userId}")
-    public List<PositionResponse> getUserPositions(@PathVariable Long userId) {
+    public List<PositionResponse> getUserPositions(@PathVariable Long userId, Authentication authentication) {
+        User currentUser = getCurrentUser(authentication);
+        if (!currentUser.getId().equals(userId) && currentUser.getRole() != UserRole.ADMIN) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Cannot access another user's positions");
+        }
+
         return positionService.getUserPositions(userId);
+    }
+
+    @GetMapping("/me")
+    public List<PositionResponse> getMyPositions(Authentication authentication) {
+        User currentUser = getCurrentUser(authentication);
+        return positionService.getUserPositions(currentUser.getId());
     }
 
     @GetMapping("/market/{marketId}")
     public List<PositionResponse> getMarketPositions(@PathVariable Long marketId) {
         return positionService.getMarketPositions(marketId);
+    }
+
+    private User getCurrentUser(Authentication authentication) {
+        if (authentication == null || !(authentication.getPrincipal() instanceof User user)) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Authentication is required");
+        }
+        return user;
     }
 }
