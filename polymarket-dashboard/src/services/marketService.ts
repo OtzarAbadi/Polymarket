@@ -4,6 +4,7 @@ import {
   BackendMarketResponseDto,
   CreateMarketRequestDto,
   MarketDetail,
+  MarketStatisticsDto,
   MarketsResult,
   PriceHistoryDto,
   ResolutionRequestDto,
@@ -26,6 +27,11 @@ export async function getMarketById(id: string | number): Promise<MarketDetail> 
 
 export async function getMarketPriceHistory(marketId: number): Promise<PriceHistoryDto[]> {
   const { data } = await apiClient.get<PriceHistoryDto[]>(`/api/markets/${marketId}/history`);
+  return data;
+}
+
+export async function getMarketStatistics(marketId: number): Promise<MarketStatisticsDto> {
+  const { data } = await apiClient.get<MarketStatisticsDto>(`/api/markets/${marketId}/statistics`);
   return data;
 }
 

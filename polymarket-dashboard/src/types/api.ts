@@ -167,6 +167,23 @@ export interface LeaderboardResponseDto {
   portfolioValue: number | string;
 }
 
+export interface MarketStatisticsDto {
+  marketId: number;
+  totalTrades: number;
+  totalVolume: number | string;
+  liquidity: number | string;
+  activeTraders: number;
+}
+
+export interface DashboardSummaryDto {
+  openMarkets: number;
+  totalMarkets: number;
+  walletBalance: number | string;
+  portfolioValue: number | string;
+  totalTrades: number;
+  openPositions: number;
+}
+
 export interface MarketsResult {
   markets: Market[];
   total: number;

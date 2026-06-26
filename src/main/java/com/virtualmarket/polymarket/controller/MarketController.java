@@ -2,11 +2,13 @@ package com.virtualmarket.polymarket.controller;
 
 import com.virtualmarket.polymarket.dto.CreateMarketRequest;
 import com.virtualmarket.polymarket.dto.MarketResponse;
+import com.virtualmarket.polymarket.dto.MarketStatisticsResponse;
 import com.virtualmarket.polymarket.dto.PriceHistoryResponse;
 import com.virtualmarket.polymarket.dto.ResolutionRequest;
 import com.virtualmarket.polymarket.dto.ResolutionResponse;
 import com.virtualmarket.polymarket.service.MarketResolutionService;
 import com.virtualmarket.polymarket.service.MarketService;
+import com.virtualmarket.polymarket.service.StatisticsService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -25,10 +27,16 @@ public class MarketController {
 
     private final MarketService marketService;
     private final MarketResolutionService marketResolutionService;
+    private final StatisticsService statisticsService;
 
-    public MarketController(MarketService marketService, MarketResolutionService marketResolutionService) {
+    public MarketController(
+            MarketService marketService,
+            MarketResolutionService marketResolutionService,
+            StatisticsService statisticsService
+    ) {
         this.marketService = marketService;
         this.marketResolutionService = marketResolutionService;
+        this.statisticsService = statisticsService;
     }
 
     @PostMapping("/admin/markets")
@@ -50,6 +58,11 @@ public class MarketController {
     @GetMapping("/{marketId}/history")
     public List<PriceHistoryResponse> getMarketPriceHistory(@PathVariable Long marketId) {
         return marketService.getPriceHistory(marketId);
+    }
+
+    @GetMapping("/{marketId}/statistics")
+    public MarketStatisticsResponse getMarketStatistics(@PathVariable Long marketId) {
+        return statisticsService.getMarketStatistics(marketId);
     }
 
     @PostMapping("/resolve")

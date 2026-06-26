@@ -10,4 +10,6 @@ public interface MarketRepository extends JpaRepository<Market, Long> {
     List<Market> findByStatus(MarketStatus status);
 
     List<Market> findByCategory(String category);
+
+    long countByStatus(MarketStatus status);
 }

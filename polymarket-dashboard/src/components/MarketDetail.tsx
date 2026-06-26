@@ -10,7 +10,7 @@ import { MarketDetail } from '@/lib/api';
 import { PriceChart } from './PriceChart';
 import { getCurrentUser } from '@/services/authService';
 import { updateCurrentUser } from '@/services/authStorage';
-import { getMarketPriceHistory } from '@/services/marketService';
+import { getMarketPriceHistory, getMarketStatistics } from '@/services/marketService';
 import { executeTrade, getTradesByMarket } from '@/services/tradeService';
 import { AuthResponseDto, TradeOutcomeName, TradeResponseDto, TradeType } from '@/types/api';
 import { EmptyState, LoadingSpinner } from './Loading';
@@ -78,6 +78,14 @@ export function MarketDetailComponent({ market, isLoading }: MarketDetailProps) 
     refetchInterval: 5000,
   });
 
+  const marketStatisticsQuery = useQuery({
+    queryKey: ['market-statistics', market.marketId],
+    queryFn: () => getMarketStatistics(market.marketId),
+    enabled: Boolean(market.marketId),
+    staleTime: 5000,
+    refetchInterval: 5000,
+  });
+
   const tradeMutation = useMutation({
     mutationFn: () => {
       if (!currentUser) {
@@ -109,6 +117,7 @@ export function MarketDetailComponent({ market, isLoading }: MarketDetailProps) 
       queryClient.invalidateQueries({ queryKey: ['market', market.id] });
       queryClient.invalidateQueries({ queryKey: ['trades-by-market', market.marketId] });
       queryClient.invalidateQueries({ queryKey: ['market-price-history', market.marketId] });
+      queryClient.invalidateQueries({ queryKey: ['market-statistics', market.marketId] });
       queryClient.invalidateQueries({ queryKey: ['markets'] });
       queryClient.invalidateQueries({ queryKey: ['markets-full'] });
       queryClient.invalidateQueries({ queryKey: ['wallet', currentUser?.userId] });
@@ -245,22 +254,38 @@ export function MarketDetailComponent({ market, isLoading }: MarketDetailProps) 
               Market Info
             </h3>
             <div className="space-y-3">
-              {market.volume24h && (
-                <div>
-                  <p className="text-sm text-slate-600 dark:text-slate-400">24h Volume</p>
-                  <p className="text-lg font-bold text-slate-900 dark:text-white">
-                    {formatVolume(market.volume24h)}
-                  </p>
-                </div>
-              )}
-              {market.liquidity && (
-                <div>
-                  <p className="text-sm text-slate-600 dark:text-slate-400">Liquidity</p>
-                  <p className="text-lg font-bold text-slate-900 dark:text-white">
-                    {formatVolume(market.liquidity)}
-                  </p>
-                </div>
-              )}
+              {marketStatisticsQuery.isLoading ? (
+                <p className="text-sm text-slate-600 dark:text-slate-400">Loading market statistics...</p>
+              ) : marketStatisticsQuery.error ? (
+                <p className="text-sm text-red-600 dark:text-red-400">Unable to load market statistics.</p>
+              ) : marketStatisticsQuery.data ? (
+                <>
+                  <div>
+                    <p className="text-sm text-slate-600 dark:text-slate-400">Total Trades</p>
+                    <p className="text-lg font-bold text-slate-900 dark:text-white">
+                      {marketStatisticsQuery.data.totalTrades.toLocaleString()}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-slate-600 dark:text-slate-400">Total Volume</p>
+                    <p className="text-lg font-bold text-slate-900 dark:text-white">
+                      {formatVolume(toNumber(marketStatisticsQuery.data.totalVolume))}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-slate-600 dark:text-slate-400">Liquidity</p>
+                    <p className="text-lg font-bold text-slate-900 dark:text-white">
+                      {formatVolume(toNumber(marketStatisticsQuery.data.liquidity))}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-slate-600 dark:text-slate-400">Active Traders</p>
+                    <p className="text-lg font-bold text-slate-900 dark:text-white">
+                      {marketStatisticsQuery.data.activeTraders.toLocaleString()}
+                    </p>
+                  </div>
+                </>
+              ) : null}
               {market.endDate && (
                 <div>
                   <p className="text-sm text-slate-600 dark:text-slate-400">End Date</p>

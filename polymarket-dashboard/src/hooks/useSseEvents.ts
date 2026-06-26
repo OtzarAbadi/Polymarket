@@ -53,6 +53,7 @@ export function useSseEvents() {
         queryClient.invalidateQueries({ queryKey: ['market', marketId] });
         queryClient.invalidateQueries({ queryKey: ['market', String(marketId)] });
         queryClient.invalidateQueries({ queryKey: ['market-price-history', marketId] });
+        queryClient.invalidateQueries({ queryKey: ['market-statistics', marketId] });
         queryClient.invalidateQueries({ queryKey: ['trades-by-market', marketId] });
       }
     };
@@ -65,6 +66,7 @@ export function useSseEvents() {
       queryClient.invalidateQueries({ queryKey: ['positions', targetUserId] });
       queryClient.invalidateQueries({ queryKey: ['trade-history', targetUserId] });
       queryClient.invalidateQueries({ queryKey: ['leaderboard'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard-summary'] });
     };
 
     eventSource.addEventListener('market-price-updated', (event) => {
@@ -85,6 +87,7 @@ export function useSseEvents() {
       queryClient.invalidateQueries({ queryKey: ['positions'] });
       queryClient.invalidateQueries({ queryKey: ['wallet'] });
       queryClient.invalidateQueries({ queryKey: ['leaderboard'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard-summary'] });
     });
 
     eventSource.addEventListener('user-portfolio-updated', (event) => {
