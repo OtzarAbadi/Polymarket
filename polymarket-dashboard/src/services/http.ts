@@ -1,4 +1,4 @@
-import axios from 'axios';
+import axios, { AxiosRequestConfig } from 'axios';
 import { getAuthToken } from './authStorage';
 
 export const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:8080';
@@ -10,11 +10,13 @@ export const apiClient = axios.create({
   },
 });
 
-export function authRequestConfig() {
+export function authRequestConfig(): AxiosRequestConfig {
   const token = getAuthToken();
 
   return {
-    headers: token ? { Authorization: `Bearer ${token}` } : {},
+    headers: {
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
   };
 }
 

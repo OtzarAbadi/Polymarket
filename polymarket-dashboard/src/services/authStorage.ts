@@ -23,7 +23,12 @@ export function getCurrentUser(): AuthResponseDto | null {
   if (!raw) return null;
 
   try {
-    return JSON.parse(raw) as AuthResponseDto;
+    const user = JSON.parse(raw) as AuthResponseDto;
+    if (!user.token) {
+      localStorage.removeItem(AUTH_STORAGE_KEY);
+      return null;
+    }
+    return user;
   } catch {
     localStorage.removeItem(AUTH_STORAGE_KEY);
     return null;

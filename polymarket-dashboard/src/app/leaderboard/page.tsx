@@ -94,6 +94,7 @@ export default function LeaderboardPage() {
     queryKey: ['leaderboard'],
     queryFn: getLeaderboard,
     enabled: Boolean(currentUser),
+    retry: false,
   });
 
   if (!currentUser) return <LoadingSpinner />;
