@@ -39,12 +39,14 @@ export default function WalletPage() {
     queryKey: ['wallet', currentUser?.userId],
     queryFn: () => getWalletByUserId(currentUser!.userId),
     enabled: Boolean(currentUser?.userId),
+    retry: false,
   });
 
   const transactionsQuery = useQuery({
     queryKey: ['wallet-transactions', currentUser?.userId],
     queryFn: () => getWalletTransactionsByUserId(currentUser!.userId),
     enabled: Boolean(currentUser?.userId),
+    retry: false,
   });
 
   if (!currentUser) return <LoadingSpinner />;

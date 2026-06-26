@@ -6,7 +6,7 @@ import { useQuery } from '@tanstack/react-query';
 import { BarChart3, Briefcase, Mail, Shield, User, Wallet } from 'lucide-react';
 import { getCurrentUser } from '@/services/authService';
 import { getPositionsByUserId } from '@/services/positionService';
-import { getTradesByUser } from '@/services/tradeService';
+import { getMyTrades } from '@/services/tradeService';
 import { getWalletByUserId } from '@/services/walletService';
 import { AuthResponseDto } from '@/types/api';
 import { ErrorBoundary, LoadingSpinner } from '@/components/Loading';
@@ -41,18 +41,21 @@ export default function ProfilePage() {
     queryKey: ['wallet', currentUser?.userId],
     queryFn: () => getWalletByUserId(currentUser!.userId),
     enabled: Boolean(currentUser?.userId),
+    retry: false,
   });
 
   const tradesQuery = useQuery({
     queryKey: ['trade-history', currentUser?.userId],
-    queryFn: () => getTradesByUser(currentUser!.userId),
+    queryFn: getMyTrades,
     enabled: Boolean(currentUser?.userId),
+    retry: false,
   });
 
   const positionsQuery = useQuery({
     queryKey: ['positions', currentUser?.userId],
     queryFn: () => getPositionsByUserId(currentUser!.userId),
     enabled: Boolean(currentUser?.userId),
+    retry: false,
   });
 
   if (!currentUser) return <LoadingSpinner />;

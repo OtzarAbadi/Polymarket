@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { useQueries, useQuery } from '@tanstack/react-query';
 import { getCurrentUser } from '@/services/authService';
 import { getMarketById } from '@/services/marketService';
-import { getTradesByUser } from '@/services/tradeService';
+import { getMyTrades } from '@/services/tradeService';
 import { AuthResponseDto, MarketDetail, TradeResponseDto } from '@/types/api';
 import { formatPrice } from '@/lib/utils';
 import { EmptyState, ErrorBoundary, LoadingSpinner } from '@/components/Loading';
@@ -63,8 +63,9 @@ export default function TradeHistoryPage() {
 
   const tradesQuery = useQuery({
     queryKey: ['trade-history', currentUser?.userId],
-    queryFn: () => getTradesByUser(currentUser!.userId),
+    queryFn: getMyTrades,
     enabled: Boolean(currentUser?.userId),
+    retry: false,
   });
 
   const trades = useMemo(() => tradesQuery.data ?? [], [tradesQuery.data]);
@@ -78,6 +79,7 @@ export default function TradeHistoryPage() {
       queryKey: ['market', marketId],
       queryFn: () => getMarketById(marketId),
       enabled: Boolean(currentUser?.userId),
+      retry: false,
     })),
   });
 

@@ -23,15 +23,18 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        http.csrf().disable()
+        http.cors().and()
+                .csrf().disable()
                 .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 .and()
                 .authorizeHttpRequests(authorize -> authorize
+                        .requestMatchers(HttpMethod.OPTIONS, "/api/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/auth/register", "/api/auth/login").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/markets", "/api/markets/*").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/markets/*/history", "/api/markets/*/statistics").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/dashboard/summary").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/events/stream").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/trades/by-market/*").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/markets/admin/markets", "/api/markets/resolve").hasRole("ADMIN")
                         .requestMatchers("/api/trades/**", "/api/positions/**", "/api/wallets/**").authenticated()
                         .anyRequest().authenticated()

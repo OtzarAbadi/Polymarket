@@ -17,3 +17,8 @@ export async function getTradesByUser(userId: number): Promise<TradeResponseDto[
   );
   return data;
 }
+
+export async function getMyTrades(): Promise<TradeResponseDto[]> {
+  const { data } = await apiClient.get<TradeResponseDto[]>('/api/trades/me');
+  return data;
+}
