@@ -29,6 +29,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers(HttpMethod.POST, "/api/auth/register", "/api/auth/login").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/markets", "/api/markets/*").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/events/stream").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/markets/admin/markets", "/api/markets/resolve").hasRole("ADMIN")
                         .requestMatchers("/api/trades/**", "/api/positions/**", "/api/wallets/**").authenticated()
                         .anyRequest().authenticated()

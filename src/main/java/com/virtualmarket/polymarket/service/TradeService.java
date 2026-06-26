@@ -1,7 +1,10 @@
 package com.virtualmarket.polymarket.service;
 
+import com.virtualmarket.polymarket.dto.MarketPriceUpdatedEvent;
 import com.virtualmarket.polymarket.dto.TradeRequest;
 import com.virtualmarket.polymarket.dto.TradeResponse;
+import com.virtualmarket.polymarket.dto.TradeCreatedEvent;
+import com.virtualmarket.polymarket.dto.UserPortfolioUpdatedEvent;
 import com.virtualmarket.polymarket.entity.Market;
 import com.virtualmarket.polymarket.entity.MarketOutcome;
 import com.virtualmarket.polymarket.entity.Position;
@@ -34,6 +37,8 @@ import java.util.stream.Collectors;
 public class TradeService {
 
     private static final int PRICE_SCALE = 4;
+    private static final String YES_OUTCOME = "YES";
+    private static final String NO_OUTCOME = "NO";
 
     private final MarketRepository marketRepository;
     private final UserRepository userRepository;
@@ -43,6 +48,7 @@ public class TradeService {
     private final TradeRepository tradeRepository;
     private final WalletTransactionRepository walletTransactionRepository;
     private final PricingService pricingService;
+    private final RealTimeEventService realTimeEventService;
 
     public TradeService(
             MarketRepository marketRepository,
@@ -52,7 +58,8 @@ public class TradeService {
             PositionRepository positionRepository,
             TradeRepository tradeRepository,
             WalletTransactionRepository walletTransactionRepository,
-            PricingService pricingService
+            PricingService pricingService,
+            RealTimeEventService realTimeEventService
     ) {
         this.marketRepository = marketRepository;
         this.userRepository = userRepository;
@@ -62,6 +69,7 @@ public class TradeService {
         this.tradeRepository = tradeRepository;
         this.walletTransactionRepository = walletTransactionRepository;
         this.pricingService = pricingService;
+        this.realTimeEventService = realTimeEventService;
     }
 
     public TradeResponse buyShares(TradeRequest request) {
@@ -192,6 +200,34 @@ public class TradeService {
 
         // update market prices
         pricingService.updateMarketPrices(market);
+        MarketOutcome yesOutcome = marketOutcomeRepository.findByMarketAndName(market, YES_OUTCOME)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "YES outcome not found"));
+        MarketOutcome noOutcome = marketOutcomeRepository.findByMarketAndName(market, NO_OUTCOME)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "NO outcome not found"));
+        LocalDateTime updatedAt = LocalDateTime.now();
+
+        realTimeEventService.publishAfterCommit(
+                "market-price-updated",
+                new MarketPriceUpdatedEvent(market.getId(), yesOutcome.getCurrentPrice(), noOutcome.getCurrentPrice(), updatedAt)
+        );
+        realTimeEventService.publishAfterCommit(
+                "trade-created",
+                new TradeCreatedEvent(
+                        trade.getId(),
+                        market.getId(),
+                        user.getId(),
+                        outcome.getName(),
+                        type,
+                        quantity,
+                        price,
+                        total,
+                        trade.getCreatedAt() != null ? trade.getCreatedAt() : updatedAt
+                )
+        );
+        realTimeEventService.publishAfterCommit(
+                "user-portfolio-updated",
+                new UserPortfolioUpdatedEvent(user.getId(), wallet.getBalance(), updatedAt)
+        );
 
         TradeResponse response = new TradeResponse();
         response.setTradeId(trade.getId());

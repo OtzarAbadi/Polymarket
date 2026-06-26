@@ -1,7 +1,9 @@
 package com.virtualmarket.polymarket.service;
 
+import com.virtualmarket.polymarket.dto.MarketResolvedEvent;
 import com.virtualmarket.polymarket.dto.ResolutionRequest;
 import com.virtualmarket.polymarket.dto.ResolutionResponse;
+import com.virtualmarket.polymarket.dto.UserPortfolioUpdatedEvent;
 import com.virtualmarket.polymarket.entity.Market;
 import com.virtualmarket.polymarket.entity.MarketOutcome;
 import com.virtualmarket.polymarket.entity.MarketResolution;
@@ -37,6 +39,7 @@ public class MarketResolutionService {
     private final PositionRepository positionRepository;
     private final WalletRepository walletRepository;
     private final WalletTransactionRepository walletTransactionRepository;
+    private final RealTimeEventService realTimeEventService;
 
     public MarketResolutionService(
             MarketRepository marketRepository,
@@ -45,7 +48,8 @@ public class MarketResolutionService {
             MarketResolutionRepository marketResolutionRepository,
             PositionRepository positionRepository,
             WalletRepository walletRepository,
-            WalletTransactionRepository walletTransactionRepository
+            WalletTransactionRepository walletTransactionRepository,
+            RealTimeEventService realTimeEventService
     ) {
         this.marketRepository = marketRepository;
         this.userRepository = userRepository;
@@ -54,6 +58,7 @@ public class MarketResolutionService {
         this.positionRepository = positionRepository;
         this.walletRepository = walletRepository;
         this.walletTransactionRepository = walletTransactionRepository;
+        this.realTimeEventService = realTimeEventService;
     }
 
     @Transactional
@@ -120,6 +125,11 @@ public class MarketResolutionService {
                     transaction.setDescription("Payout for resolved market");
                     walletTransactionRepository.save(transaction);
 
+                    realTimeEventService.publishAfterCommit(
+                            "user-portfolio-updated",
+                            new UserPortfolioUpdatedEvent(position.getUser().getId(), wallet.getBalance(), LocalDateTime.now())
+                    );
+
                     totalPayout = totalPayout.add(payout);
                     usersPaid++;
                 }
@@ -133,6 +143,11 @@ public class MarketResolutionService {
 
         market.setStatus(MarketStatus.RESOLVED);
         marketRepository.save(market);
+        LocalDateTime resolvedAt = LocalDateTime.now();
+        realTimeEventService.publishAfterCommit(
+                "market-resolved",
+                new MarketResolvedEvent(market.getId(), winningOutcome.getName(), resolvedAt)
+        );
 
         ResolutionResponse response = new ResolutionResponse();
         response.setMarketId(market.getId());
