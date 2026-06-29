@@ -24,6 +24,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const refreshCurrentUser = () => setCurrentUser(getCurrentUser());
 
   useEffect(() => {
+    refreshCurrentUser();
     window.addEventListener(AUTH_STATE_EVENT, refreshCurrentUser);
     return () => window.removeEventListener(AUTH_STATE_EVENT, refreshCurrentUser);
   }, []);
