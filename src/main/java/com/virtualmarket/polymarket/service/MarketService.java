@@ -78,12 +78,6 @@ public class MarketService {
         MarketOutcome noOutcome = createOutcome(savedMarket, NO_OUTCOME);
         marketOutcomeRepository.saveAll(List.of(yesOutcome, noOutcome));
 
-        PriceHistory priceHistory = new PriceHistory();
-        priceHistory.setMarket(savedMarket);
-        priceHistory.setYesPrice(INITIAL_PRICE);
-        priceHistory.setNoPrice(INITIAL_PRICE);
-        priceHistoryRepository.save(priceHistory);
-
         return toMarketResponse(savedMarket, yesOutcome, noOutcome);
     }
 
@@ -166,6 +160,7 @@ public class MarketService {
 
     private PriceHistoryResponse toPriceHistoryResponse(PriceHistory priceHistory) {
         return new PriceHistoryResponse(
+                priceHistory.getMarket().getId(),
                 priceHistory.getCreatedAt(),
                 priceHistory.getYesPrice(),
                 priceHistory.getNoPrice()

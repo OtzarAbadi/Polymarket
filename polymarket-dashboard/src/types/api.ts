@@ -151,6 +151,7 @@ export interface MarketDetail extends Market {
 }
 
 export interface PriceHistoryDto {
+  marketId: number;
   timestamp: string;
   yesPrice: number;
   noPrice: number;

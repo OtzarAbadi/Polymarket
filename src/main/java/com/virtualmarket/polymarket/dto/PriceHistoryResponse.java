@@ -5,6 +5,7 @@ import java.time.LocalDateTime;
 
 public class PriceHistoryResponse {
 
+    private Long marketId;
     private LocalDateTime timestamp;
     private BigDecimal yesPrice;
     private BigDecimal noPrice;
@@ -12,10 +13,19 @@ public class PriceHistoryResponse {
     public PriceHistoryResponse() {
     }
 
-    public PriceHistoryResponse(LocalDateTime timestamp, BigDecimal yesPrice, BigDecimal noPrice) {
+    public PriceHistoryResponse(Long marketId, LocalDateTime timestamp, BigDecimal yesPrice, BigDecimal noPrice) {
+        this.marketId = marketId;
         this.timestamp = timestamp;
         this.yesPrice = yesPrice;
         this.noPrice = noPrice;
+    }
+
+    public Long getMarketId() {
+        return marketId;
+    }
+
+    public void setMarketId(Long marketId) {
+        this.marketId = marketId;
     }
 
     public LocalDateTime getTimestamp() {
