@@ -6,7 +6,7 @@ import { ThemeToggle } from './ThemeToggle';
 import { useAuth } from '@/contexts/AuthContext';
 
 export function Header() {
-  const { currentUser, logout } = useAuth();
+  const { currentUser, isAuthInitialized, logout } = useAuth();
 
   const handleLogout = () => {
     logout();
@@ -31,7 +31,7 @@ export function Header() {
             <Link href="/markets" className="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors">
               Markets
             </Link>
-            {currentUser ? (
+            {!isAuthInitialized ? null : currentUser ? (
               <>
                 <Link href="/portfolio" className="flex items-center gap-1 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors">
                   <Briefcase className="w-4 h-4" />

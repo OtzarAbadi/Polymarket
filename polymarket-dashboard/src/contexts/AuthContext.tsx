@@ -18,13 +18,14 @@ interface AuthContextValue {
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [currentUser, setCurrentUser] = useState<AuthResponseDto | null>(() => getCurrentUser());
-  const [isAuthInitialized] = useState(true);
+  const [currentUser, setCurrentUser] = useState<AuthResponseDto | null>(null);
+  const [isAuthInitialized, setIsAuthInitialized] = useState(false);
 
   const refreshCurrentUser = () => setCurrentUser(getCurrentUser());
 
   useEffect(() => {
     refreshCurrentUser();
+    setIsAuthInitialized(true);
     window.addEventListener(AUTH_STATE_EVENT, refreshCurrentUser);
     return () => window.removeEventListener(AUTH_STATE_EVENT, refreshCurrentUser);
   }, []);
