@@ -9,6 +9,8 @@ import com.virtualmarket.polymarket.dto.ResolutionResponse;
 import com.virtualmarket.polymarket.service.MarketResolutionService;
 import com.virtualmarket.polymarket.service.MarketService;
 import com.virtualmarket.polymarket.service.StatisticsService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -23,6 +25,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/markets")
+@Tag(name = "Markets", description = "Prediction market discovery, pricing, and administration")
 public class MarketController {
 
     private final MarketService marketService;
@@ -41,31 +44,37 @@ public class MarketController {
 
     @PostMapping("/admin/markets")
     @ResponseStatus(HttpStatus.CREATED)
+    @Operation(summary = "Create a prediction market", tags = "Admin")
     public MarketResponse createMarket(@Valid @RequestBody CreateMarketRequest request) {
         return marketService.createMarket(request);
     }
 
     @GetMapping
+    @Operation(summary = "List all markets")
     public List<MarketResponse> getAllMarkets() {
         return marketService.getAllMarkets();
     }
 
     @GetMapping("/{id}")
+    @Operation(summary = "Get a market by ID")
     public MarketResponse getMarketById(@PathVariable Long id) {
         return marketService.getMarketById(id);
     }
 
     @GetMapping("/{marketId}/history")
+    @Operation(summary = "Get chronological trade-driven price history")
     public List<PriceHistoryResponse> getMarketPriceHistory(@PathVariable Long marketId) {
         return marketService.getPriceHistory(marketId);
     }
 
     @GetMapping("/{marketId}/statistics")
+    @Operation(summary = "Get market trading statistics")
     public MarketStatisticsResponse getMarketStatistics(@PathVariable Long marketId) {
         return statisticsService.getMarketStatistics(marketId);
     }
 
     @PostMapping("/resolve")
+    @Operation(summary = "Resolve and settle a market", tags = "Admin")
     public ResolutionResponse resolveMarket(@RequestBody ResolutionRequest request) {
         return marketResolutionService.resolveMarket(request);
     }

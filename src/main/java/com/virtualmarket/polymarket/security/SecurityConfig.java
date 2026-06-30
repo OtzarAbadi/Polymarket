@@ -29,6 +29,7 @@ public class SecurityConfig {
                 .and()
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers(HttpMethod.OPTIONS, "/api/**").permitAll()
+                        .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/auth/register", "/api/auth/login").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/markets", "/api/markets/*").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/markets/*/history", "/api/markets/*/statistics").permitAll()

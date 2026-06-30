@@ -5,6 +5,8 @@ import com.virtualmarket.polymarket.dto.WalletTransactionResponse;
 import com.virtualmarket.polymarket.entity.User;
 import com.virtualmarket.polymarket.enums.UserRole;
 import com.virtualmarket.polymarket.service.WalletApiService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -17,6 +19,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/wallets")
+@Tag(name = "Wallet", description = "Virtual balances and wallet transaction history")
 public class WalletController {
 
     private final WalletApiService walletApiService;
@@ -26,6 +29,7 @@ public class WalletController {
     }
 
     @GetMapping("/user/{userId}")
+    @Operation(summary = "Get a user's wallet")
     public WalletResponse getWalletByUserId(@PathVariable Long userId, Authentication authentication) {
         User currentUser = getCurrentUser(authentication);
         if (!currentUser.getId().equals(userId) && currentUser.getRole() != UserRole.ADMIN) {
@@ -36,6 +40,7 @@ public class WalletController {
     }
 
     @GetMapping("/user/{userId}/transactions")
+    @Operation(summary = "Get a user's wallet transactions")
     public List<WalletTransactionResponse> getWalletTransactionsByUserId(
             @PathVariable Long userId,
             Authentication authentication
@@ -49,12 +54,14 @@ public class WalletController {
     }
 
     @GetMapping("/me")
+    @Operation(summary = "Get the authenticated user's wallet", tags = {"Wallet", "Profile"})
     public WalletResponse getMyWallet(Authentication authentication) {
         User currentUser = getCurrentUser(authentication);
         return walletApiService.getWalletByUserId(currentUser.getId());
     }
 
     @GetMapping("/me/transactions")
+    @Operation(summary = "Get the authenticated user's wallet transactions", tags = {"Wallet", "Profile"})
     public List<WalletTransactionResponse> getMyWalletTransactions(Authentication authentication) {
         User currentUser = getCurrentUser(authentication);
         return walletApiService.getWalletTransactionsByUserId(currentUser.getId());

@@ -4,6 +4,8 @@ import com.virtualmarket.polymarket.dto.PositionResponse;
 import com.virtualmarket.polymarket.entity.User;
 import com.virtualmarket.polymarket.enums.UserRole;
 import com.virtualmarket.polymarket.service.PositionService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -16,6 +18,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/positions")
+@Tag(name = "Positions", description = "User holdings in market outcomes")
 public class PositionController {
 
     private final PositionService positionService;
@@ -25,6 +28,7 @@ public class PositionController {
     }
 
     @GetMapping("/user/{userId}")
+    @Operation(summary = "Get positions for a user")
     public List<PositionResponse> getUserPositions(@PathVariable Long userId, Authentication authentication) {
         User currentUser = getCurrentUser(authentication);
         if (!currentUser.getId().equals(userId) && currentUser.getRole() != UserRole.ADMIN) {
@@ -35,12 +39,14 @@ public class PositionController {
     }
 
     @GetMapping("/me")
+    @Operation(summary = "Get the authenticated user's portfolio positions", tags = {"Positions", "Profile"})
     public List<PositionResponse> getMyPositions(Authentication authentication) {
         User currentUser = getCurrentUser(authentication);
         return positionService.getUserPositions(currentUser.getId());
     }
 
     @GetMapping("/market/{marketId}")
+    @Operation(summary = "Get all positions in a market")
     public List<PositionResponse> getMarketPositions(@PathVariable Long marketId) {
         return positionService.getMarketPositions(marketId);
     }
