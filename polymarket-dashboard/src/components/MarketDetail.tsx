@@ -3,8 +3,9 @@
 import Link from 'next/link';
 import { useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { AxiosError } from 'axios';
+import axios from 'axios';
 import { ArrowLeft } from 'lucide-react';
+import { toast } from 'sonner';
 import { formatPrice, formatVolume, getStateColor, getStateLabel } from '@/lib/utils';
 import { MarketDetail } from '@/lib/api';
 import { PriceChart } from './PriceChart';
@@ -45,8 +46,6 @@ export function MarketDetailComponent({ market, isLoading }: MarketDetailProps) 
   const [tradeType, setTradeType] = useState<TradeType>('BUY');
   const [outcomeName, setOutcomeName] = useState<TradeOutcomeName>('YES');
   const [quantity, setQuantity] = useState('1');
-  const [tradeError, setTradeError] = useState<string | null>(null);
-  const [tradeSuccess, setTradeSuccess] = useState<string | null>(null);
 
   const yesPercentage = (market.yesPrice * 100).toFixed(1);
   const noPercentage = ((1 - market.yesPrice) * 100).toFixed(1);
@@ -108,8 +107,7 @@ export function MarketDetailComponent({ market, isLoading }: MarketDetailProps) 
     onSuccess: (response) => {
       updateCurrentUser({ walletBalance: response.walletBalanceAfterTrade });
       refreshCurrentUser();
-      setTradeError(null);
-      setTradeSuccess(`${tradeType} ${outcomeName} trade completed.`);
+      toast.success(`${tradeType} ${outcomeName} trade completed.`);
       queryClient.invalidateQueries({ queryKey: ['market', market.id] });
       queryClient.invalidateQueries({ queryKey: ['trades-by-market', market.marketId] });
       queryClient.invalidateQueries({ queryKey: ['market-price-history', market.marketId] });
@@ -122,33 +120,28 @@ export function MarketDetailComponent({ market, isLoading }: MarketDetailProps) 
       queryClient.invalidateQueries({ queryKey: ['trade-history', currentUser?.userId] });
     },
     onError: (err) => {
-      const axiosError = err as AxiosError<{ message?: string }>;
-      setTradeSuccess(null);
-      setTradeError(
-        axiosError.response?.data?.message ||
-          (err instanceof Error ? err.message : 'Trade failed. Check your balance and position.')
-      );
+      if (!axios.isAxiosError(err)) {
+        toast.error(err instanceof Error ? err.message : 'Trade failed. Check your balance and position.');
+      }
     },
   });
 
   const handleTradeSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    setTradeError(null);
-    setTradeSuccess(null);
     if (!currentUser) {
-      setTradeError('Login is required before trading.');
+      toast.error('Login is required before trading.');
       return;
     }
     if (!selectedOutcomeId) {
-      setTradeError('Selected outcome is unavailable.');
+      toast.error('Selected outcome is unavailable.');
       return;
     }
     if (!Number.isFinite(parsedQuantity) || parsedQuantity <= 0) {
-      setTradeError('Enter a quantity greater than zero.');
+      toast.error('Enter a quantity greater than zero.');
       return;
     }
     if (tradeType !== 'BUY' && tradeType !== 'SELL') {
-      setTradeError('Trade type must be BUY or SELL.');
+      toast.error('Trade type must be BUY or SELL.');
       return;
     }
     tradeMutation.mutate();
@@ -373,9 +366,6 @@ export function MarketDetailComponent({ market, isLoading }: MarketDetailProps) 
                     <span className="font-medium text-slate-900 dark:text-white">${formatPrice(estimatedCost)}</span>
                   </div>
                 </div>
-
-                {tradeError && <p className="text-sm text-red-600 dark:text-red-400">{tradeError}</p>}
-                {tradeSuccess && <p className="text-sm text-green-600 dark:text-green-400">{tradeSuccess}</p>}
 
                 <button
                   type="submit"

@@ -3,8 +3,8 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { AxiosError } from 'axios';
 import { UserPlus } from 'lucide-react';
+import { toast } from 'sonner';
 import { register } from '@/services/authService';
 
 export default function RegisterPage() {
@@ -13,19 +13,17 @@ export default function RegisterPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    setError(null);
     setIsSubmitting(true);
 
     try {
       await register({ username, email, password });
+      toast.success('Registration successful.');
       router.push('/markets');
-    } catch (err) {
-      const axiosError = err as AxiosError<{ message?: string }>;
-      setError(axiosError.response?.data?.message || 'Registration failed. Check the details and try again.');
+    } catch {
+      // API failures are surfaced by the shared HTTP interceptor.
     } finally {
       setIsSubmitting(false);
     }
@@ -84,10 +82,6 @@ export default function RegisterPage() {
               required
             />
           </div>
-
-          {error && (
-            <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
-          )}
 
           <button
             type="submit"

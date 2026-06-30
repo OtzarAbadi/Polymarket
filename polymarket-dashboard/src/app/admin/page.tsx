@@ -2,9 +2,10 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { AxiosError } from 'axios';
+import axios from 'axios';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { CheckCircle, Shield, Wrench } from 'lucide-react';
+import { Shield, Wrench } from 'lucide-react';
+import { toast } from 'sonner';
 import { createMarket, getMarkets, resolveMarket } from '@/services/marketService';
 import { Market, TradeOutcomeName } from '@/types/api';
 import { ErrorBoundary, LoadingSpinner } from '@/components/Loading';
@@ -40,8 +41,10 @@ function formatDateTime(value?: string): string {
 }
 
 function getErrorMessage(error: unknown, fallback: string): string {
-  const axiosError = error as AxiosError<{ message?: string }>;
-  return axiosError.response?.data?.message || axiosError.message || fallback;
+  if (axios.isAxiosError<{ message?: string }>(error)) {
+    return error.response?.data?.message || error.message || fallback;
+  }
+  return error instanceof Error ? error.message : fallback;
 }
 
 function isResolvable(market: Market, now: number): boolean {
@@ -55,9 +58,6 @@ export default function AdminPage() {
   const queryClient = useQueryClient();
   const { currentUser, isAuthInitialized } = useAuth();
   const [form, setForm] = useState<MarketFormState>(emptyForm);
-  const [message, setMessage] = useState<string | null>(null);
-  const [formError, setFormError] = useState<string | null>(null);
-  const [resolveError, setResolveError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!isAuthInitialized) return;
@@ -94,13 +94,13 @@ export default function AdminPage() {
     },
     onSuccess: async () => {
       setForm(emptyForm);
-      setFormError(null);
-      setMessage('Market created successfully.');
+      toast.success('Market created successfully.');
       await queryClient.invalidateQueries({ queryKey: ['admin-markets'] });
     },
     onError: (error) => {
-      setMessage(null);
-      setFormError(getErrorMessage(error, 'Unable to create market.'));
+      if (!axios.isAxiosError(error)) {
+        toast.error(getErrorMessage(error, 'Unable to create market.'));
+      }
     },
   });
 
@@ -118,13 +118,13 @@ export default function AdminPage() {
       });
     },
     onSuccess: async () => {
-      setResolveError(null);
-      setMessage('Market resolved successfully.');
+      toast.success('Market resolved successfully.');
       await queryClient.invalidateQueries({ queryKey: ['admin-markets'] });
     },
     onError: (error) => {
-      setMessage(null);
-      setResolveError(getErrorMessage(error, 'Unable to resolve market.'));
+      if (!axios.isAxiosError(error)) {
+        toast.error(getErrorMessage(error, 'Unable to resolve market.'));
+      }
     },
   });
 
@@ -137,8 +137,6 @@ export default function AdminPage() {
 
   const handleCreateMarket = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    setMessage(null);
-    setFormError(null);
     createMarketMutation.mutate();
   };
 
@@ -147,12 +145,10 @@ export default function AdminPage() {
     const normalizedOutcome = winningOutcome?.trim().toUpperCase();
 
     if (normalizedOutcome !== 'YES' && normalizedOutcome !== 'NO') {
-      setResolveError('Resolution cancelled. Enter YES or NO to resolve a market.');
+      toast.info('Resolution cancelled. Enter YES or NO to resolve a market.');
       return;
     }
 
-    setMessage(null);
-    setResolveError(null);
     resolveMarketMutation.mutate({ market, outcome: normalizedOutcome });
   };
 
@@ -181,13 +177,6 @@ export default function AdminPage() {
           <p className="mt-1 text-slate-600 dark:text-slate-400">Create and resolve prediction markets</p>
         </div>
       </div>
-
-      {message && (
-        <div className="flex items-center gap-2 rounded-lg border border-green-200 dark:border-green-900 bg-green-50 dark:bg-green-950 p-4 text-sm text-green-700 dark:text-green-300">
-          <CheckCircle className="w-4 h-4" />
-          {message}
-        </div>
-      )}
 
       <section className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-6">
         <div className="flex items-center gap-2 mb-5">
@@ -259,10 +248,6 @@ export default function AdminPage() {
             />
           </div>
 
-          {formError && (
-            <p className="md:col-span-2 text-sm text-red-600 dark:text-red-400">{formError}</p>
-          )}
-
           <div className="md:col-span-2">
             <button
               type="submit"
@@ -277,12 +262,6 @@ export default function AdminPage() {
 
       <section>
         <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-4">Markets</h2>
-
-        {resolveError && (
-          <div className="mb-4 rounded-lg border border-red-200 dark:border-red-900 bg-red-50 dark:bg-red-950 p-4 text-sm text-red-700 dark:text-red-300">
-            {resolveError}
-          </div>
-        )}
 
         {marketsQuery.isLoading ? (
           <LoadingSpinner />

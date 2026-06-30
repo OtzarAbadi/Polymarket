@@ -3,8 +3,8 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { AxiosError } from 'axios';
 import { LogIn } from 'lucide-react';
+import { toast } from 'sonner';
 import { login } from '@/services/authService';
 
 export default function LoginPage() {
@@ -12,19 +12,17 @@ export default function LoginPage() {
   const [usernameOrEmail, setUsernameOrEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    setError(null);
     setIsSubmitting(true);
 
     try {
       await login({ usernameOrEmail, password });
+      toast.success('Login successful.');
       router.push('/markets');
-    } catch (err) {
-      const axiosError = err as AxiosError<{ message?: string }>;
-      setError(axiosError.response?.data?.message || 'Login failed. Check your credentials and try again.');
+    } catch {
+      // API failures are surfaced by the shared HTTP interceptor.
     } finally {
       setIsSubmitting(false);
     }
@@ -69,10 +67,6 @@ export default function LoginPage() {
               required
             />
           </div>
-
-          {error && (
-            <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
-          )}
 
           <button
             type="submit"

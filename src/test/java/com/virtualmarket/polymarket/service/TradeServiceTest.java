@@ -167,6 +167,40 @@ class TradeServiceTest {
         verify(priceHistoryRepository, never()).save(any());
     }
 
+    @Test
+    void successfulSellCreditsWalletAndReducesOwnedPosition() {
+        yesOutcome.setShares(new BigDecimal("5.0000"));
+
+        Position position = new Position();
+        position.setUser(user);
+        position.setMarket(market);
+        position.setOutcome(yesOutcome);
+        position.setQuantity(new BigDecimal("5.0000"));
+
+        when(positionRepository.findByUserAndMarketAndOutcome(user, market, yesOutcome))
+                .thenReturn(Optional.of(position));
+        when(marketOutcomeRepository.findByMarketAndName(market, "YES"))
+                .thenReturn(Optional.of(yesOutcome));
+        when(marketOutcomeRepository.findByMarketAndName(market, "NO"))
+                .thenReturn(Optional.of(noOutcome));
+
+        TradeResponse response = tradeService.executeTrade(request(TradeType.SELL, "3.0000"));
+
+        assertThat(response.getTotalCost()).isEqualByComparingTo("1.5000");
+        assertThat(response.getWalletBalanceAfterTrade()).isEqualByComparingTo("101.5000");
+        assertThat(response.getPositionQuantityAfterTrade()).isEqualByComparingTo("2.0000");
+        assertThat(yesOutcome.getShares()).isEqualByComparingTo("2.0000");
+        assertThat(yesOutcome.getCurrentPrice()).isEqualByComparingTo("0.5050");
+        assertThat(noOutcome.getCurrentPrice()).isEqualByComparingTo("0.4950");
+
+        ArgumentCaptor<PriceHistory> historyCaptor = ArgumentCaptor.forClass(PriceHistory.class);
+        verify(priceHistoryRepository).save(historyCaptor.capture());
+        assertThat(historyCaptor.getValue().getYesPrice()).isEqualByComparingTo("0.5050");
+        assertThat(historyCaptor.getValue().getNoPrice()).isEqualByComparingTo("0.4950");
+        verify(tradeRepository).save(any());
+        verify(walletTransactionRepository).save(any());
+    }
+
     private MarketOutcome outcome(Long id, String name) {
         MarketOutcome outcome = new MarketOutcome();
         outcome.setId(id);

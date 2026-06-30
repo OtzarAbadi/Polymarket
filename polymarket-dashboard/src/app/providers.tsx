@@ -2,6 +2,7 @@
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactNode } from 'react';
+import { Toaster } from 'sonner';
 import { useSseEvents } from '@/hooks/useSseEvents';
 import { AuthProvider } from '@/contexts/AuthContext';
 
@@ -18,6 +19,13 @@ export function Providers({ children }: { children: ReactNode }) {
       <QueryClientProvider client={queryClient}>
         <SseEventBridge />
         {children}
+        <Toaster
+          position="top-right"
+          richColors
+          closeButton
+          duration={4000}
+          toastOptions={{ className: 'font-sans' }}
+        />
       </QueryClientProvider>
     </AuthProvider>
   );
